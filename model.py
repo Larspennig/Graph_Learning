@@ -74,6 +74,7 @@ class Enc_block(nn.Module):
     def forward(self, data):
         x_1 = self.pconv(data)
         x_2 = self.downlayer(x_1)
+        return x_2
 
 
 class TransformerGNN(nn.Module):
@@ -87,13 +88,15 @@ class TransformerGNN(nn.Module):
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=512, out_features=2*512),
-            torch.nn.BatchNorm1d(num_features=2*512),
+            # torch.nn.BatchNorm1d(num_features=2*512),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.3),
             torch.nn.Linear(in_features=2*512, out_features=512),
-            torch.nn.BatchNorm2d(num_features=512),
+            # torch.nn.BatchNorm1d(num_features=512),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(p=0.3),
             torch.nn.Linear(in_features=512, out_features=40),
-            torch.nn.ReLU())
+            torch.nn.Softmax())
 
     def generate_graph(self, data):
         # initalize graph
@@ -107,22 +110,22 @@ class TransformerGNN(nn.Module):
         data = self.generate_graph(data)
 
         # Layers
-        x_1 = self.pconv1(data)
-        x_2 = self.generate_graph(self.downlayer1(x_1))
+        x_1 = self.enc1(data)
+        x_2 = self.generate_graph(x_1)
 
-        x_3 = self.pconv2(x_2)
-        x_4 = self.generate_graph(self.downlayer2(x_3))
+        x_3 = self.enc2(x_2)
+        x_4 = self.generate_graph(x_3)
 
-        x_5 = self.pconv3(x_4)
-        x_6 = self.generate_graph(self.downlayer3(x_5))
+        x_5 = self.enc3(x_4)
+        x_6 = self.generate_graph(x_5)
 
-        x_7 = self.pconv4(x_6)
-        x_8 = self.generate_graph(self.downlayer4(x_7))
+        x_7 = self.enc4(x_6)
+        x_8 = self.generate_graph(x_7)
 
-        x_9 = self.pconv4(x_8)
-        x_10 = self.generate_graph(self.downlayer4(x_9))
+        x_9 = self.enc5(x_8)
+        x_10 = self.generate_graph(x_9)
 
         # global_pooling and output head
         x_11 = tgnn.pool.global_mean_pool(x_9.x, x_9.batch)
-        pred = torch.softmax(self.output_head(x_10).squeeze())
+        pred = self.output_head(x_11)
         return pred
