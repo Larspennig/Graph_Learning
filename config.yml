@@ -1,0 +1,16 @@
+# Configuration for Graph Learning
+
+# Model setup
+layers: value1
+pooling: value2
+voxelization:
+  - item1
+  - item2
+  - item3
+
+# Training parameters
+
+batch_size: 1
+epochs: 10
+learning_rate: 0.001
+# Data parameters
