@@ -40,15 +40,16 @@ class PointTrans_Layer_down(nn.Module):
     def __init__(self, in_channels=3, out_channels=3, perc_down=0.5):
         super().__init__()
         self.perc_points = perc_down
-        self.linear = torch.nn.Linear(
-            in_features=in_channels,
-            out_features=out_channels)
+        self.linear = torch.nn.Linear(in_features=in_channels,
+                                      out_features=out_channels)
 
     def forward(self, data):
         data.x = self.linear(data.x.float())
         # uniform sampling
-        index = np.random.choice(data.x.shape[0], size=int(
-            np.round(data.x.shape[0]*self.perc_points)), replace=False)
+        index = np.random.choice(data.x.shape[0],
+                                 size=int(
+                                     np.round(data.x.shape[0]*self.perc_points)),
+                                 replace=False)
         index = np.sort(index)
         # farthest point sampling
         # index = tgnn.pool.fps(
@@ -70,31 +71,19 @@ class Enc_block(nn.Module):
         self.downlayer = PointTrans_Layer_down(
             in_channels=out_channels, out_channels=out_channels, perc_down=perc_down)
 
-        self.layer = 1
+    def forward(self, data):
+        x_1 = self.pconv(data)
+        x_2 = self.downlayer(x_1)
 
 
 class TransformerGNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.pconv1 = PointTrans_Layer(in_channels=3, out_channels=32)
-        self.downlayer1 = PointTrans_Layer_down(
-            in_channels=32, out_channels=32)
-
-        self.pconv2 = PointTrans_Layer(in_channels=32, out_channels=64)
-        self.downlayer2 = PointTrans_Layer_down(
-            in_channels=64, out_channels=64)
-
-        self.pconv3 = PointTrans_Layer(in_channels=64, out_channels=128)
-        self.downlayer3 = PointTrans_Layer_down(
-            in_channels=128, out_channels=128)
-
-        self.pconv4 = PointTrans_Layer(in_channels=128, out_channels=256)
-        self.downlayer4 = PointTrans_Layer_down(
-            in_channels=256, out_channels=256)
-
-        self.pconv5 = PointTrans_Layer(in_channels=256, out_channels=512)
-        self.downlayer5 = PointTrans_Layer_down(
-            in_channels=512, out_channels=512)
+        self.enc1 = Enc_block(in_channels=3, out_channels=32, perc_down=0.5)
+        self.enc2 = Enc_block(in_channels=32, out_channels=64, perc_down=0.5)
+        self.enc3 = Enc_block(in_channels=64, out_channels=128, perc_down=0.5)
+        self.enc4 = Enc_block(in_channels=128, out_channels=256, perc_down=0.5)
+        self.enc5 = Enc_block(in_channels=256, out_channels=512, perc_down=0.5)
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=512, out_features=2*512),
