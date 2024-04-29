@@ -102,8 +102,7 @@ class TransformerGNN(nn.Module):
         # initalize graph
         # data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-        # data.to('cuda')
-        return data
+        return data  # .cuda()
 
     def forward(self, data):
         # compute graph
@@ -126,6 +125,6 @@ class TransformerGNN(nn.Module):
         x_10 = self.generate_graph(x_9)
 
         # global_pooling and output head
-        x_11 = tgnn.pool.global_mean_pool(x_9.x, x_9.batch)
+        x_11 = tgnn.pool.global_mean_pool(x_10.x, x_10.batch)
         pred = self.output_head(x_11)
         return pred

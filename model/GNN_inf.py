@@ -1,21 +1,22 @@
-import pytorch_lightning as pl
+from lightning import LightningModule
 import torch
 from model.model import TransformerGNN
 
 
-class Lightning_GNN(pl.LightningModule):
+class Lightning_GNN(LightningModule):
     def __init__(self):
         super().__init__()
         self.model = TransformerGNN()
+        self.loss_fn = torch.nn.CrossEntropyLoss()
 
-    def forward(self, inputs, target):
-        return self.model(inputs, target)
+    def forward(self, inputs):
+        return self.model(inputs)
 
     def training_step(self, batch):
-        inputs, target = batch
+        inputs = batch
+        target = batch.y.type(torch.LongTensor)
         output = self(inputs)
-
-        loss = torch.nn.functional.nll_loss(output, target.view(-1))
+        loss = self.loss_fn(output, target)
         return loss
 
     def validation_step(self, batch):
@@ -23,4 +24,4 @@ class Lightning_GNN(pl.LightningModule):
         return a
 
     def configure_optimizers(self):
-        return torch.optim.SGD(self.model.parameters(), lr=0.1)
+        return torch.optim.adam(self.model.parameters(), lr=0.1)
