@@ -87,16 +87,16 @@ class TransformerGNN(nn.Module):
         self.enc5 = Enc_block(in_channels=256, out_channels=512, perc_down=0.5)
 
         self.output_head = torch.nn.Sequential(
-            torch.nn.Linear(in_features=512, out_features=2*512),
+            torch.nn.Linear(in_features=512, out_features=512),
             # torch.nn.BatchNorm1d(num_features=2*512),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.3),
-            torch.nn.Linear(in_features=2*512, out_features=512),
+            torch.nn.Linear(in_features=512, out_features=512),
             # torch.nn.BatchNorm1d(num_features=512),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.3),
             torch.nn.Linear(in_features=512, out_features=40),
-            torch.nn.Softmax())
+            torch.nn.Softmax(dim=1))
 
     def generate_graph(self, data):
         # initalize graph
