@@ -38,8 +38,6 @@ class Modelnet40(Dataset):
                     obj_list.append(os.path.join(path.split(
                         sep='/')[-2], path.split(sep='/')[-1], name))
 
-        # Return Train and Test idxs
-
         return obj_list
 
     def process(self):

@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 
 from model.GNN_inf import Lightning_GNN
 from geometric import Extract_Geometric
-from Mddataloader import Modelnet40
+from loaders.Mdndataloader import Modelnet40
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 
@@ -28,12 +28,18 @@ train_idx, val_idx = train_test_split(np.arange(len(dataset)),
                                       shuffle=True)
 
 train_loader = tg.loader.DataLoader(dataset[train_idx],
-                                    batch_size=config['batch_size'])
+                                    batch_size=config['batch_size'],
+                                    num_workers=2)
+
 val_loader = tg.loader.DataLoader(dataset[val_idx],
-                                  batch_size=config['batch_size'])
+                                  batch_size=config['batch_size'],
+                                  num_workers=2)
 
 # Model setup
 GNN_model = Lightning_GNN(config=config)
+
+data = next(iter(train_loader))
+GNN_model(data)
 
 
 def count_parameters(model):
@@ -51,7 +57,7 @@ logger = CSVLogger(save_dir=output_dir,
                    flush_logs_every_n_steps=10)
 
 checkpoint_callback = ModelCheckpoint(save_top_k=3,
-                                      monitor='train_loss',
+                                      monitor='val_loss',
                                       mode='min',
                                       dirpath=output_dir,
                                       filename=checkpoint_filename)
@@ -63,8 +69,9 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      default_root_dir=output_dir,
                      accelerator='cpu',
                      logger=logger,
-                     limit_train_batches=2
-                     )
+                     log_every_n_steps=5)
+# limit_train_batches=2,
+# limit_val_batches=2)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,

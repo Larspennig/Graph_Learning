@@ -88,11 +88,11 @@ class TransformerGNN(nn.Module):
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=512, out_features=512),
-            # torch.nn.BatchNorm1d(num_features=2*512),
+            torch.nn.BatchNorm1d(num_features=512),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.3),
             torch.nn.Linear(in_features=512, out_features=512),
-            # torch.nn.BatchNorm1d(num_features=512),
+            torch.nn.BatchNorm1d(num_features=512),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.3),
             torch.nn.Linear(in_features=512, out_features=40),
