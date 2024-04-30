@@ -4,10 +4,11 @@ from model.model import TransformerGNN
 
 
 class Lightning_GNN(LightningModule):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
         self.model = TransformerGNN()
         self.loss_fn = torch.nn.CrossEntropyLoss()
+        self.config = config
 
     def forward(self, inputs):
         return self.model(inputs)
@@ -17,11 +18,20 @@ class Lightning_GNN(LightningModule):
         target = batch.y.type(torch.LongTensor)
         output = self(inputs)
         loss = self.loss_fn(output, target)
+        self.log('train_loss', loss.item(), on_epoch=True)
+        self.log('curr_train_loss'.loss.item(), on_step=True)
         return loss
 
     def validation_step(self, batch):
-        a = 1
-        return a
+        inputs = batch
+        target = batch.y.type(torch.LongTensor)
+        output = self(inputs)
+        loss = self.loss_fn(output, target)
+        self.log('val_loss', loss.item(), on_epoch=True)
+        values = output.max(dim=1).indices
+        accr = torch.sum(values == target)/len(target)
+        self.log('val_acc', accr, on_epoch=True)
+        return loss
 
     def configure_optimizers(self):
-        return torch.optim.adam(self.model.parameters(), lr=0.1)
+        return torch.optim.Adam(self.model.parameters(), lr=self.config['learning_rate'])
