@@ -11,7 +11,7 @@ car: 8
 chair: 9
 vase: 10
 cone: 11
-coup: 12
+cup: 12
 curtain: 13
 desk: 14
 door: 15
@@ -38,5 +38,5 @@ table: 35
 tent: 36
 toilet: 37
 tv_stand: 38
-vase: 39
-wardrobe: 40
+wardrobe: 39
+xbox: 40
