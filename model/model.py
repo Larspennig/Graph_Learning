@@ -48,7 +48,7 @@ class PointTrans_Layer_down(nn.Module):
 
     def forward(self, data):
         data.x = self.down(data.x.float())
-        ''' uniform sampling
+        ''' # uniform sampling
         index = np.random.choice(data.x.shape[0],
                                  size=int(
                                      np.round(data.x.shape[0]*self.perc_points)),
@@ -106,9 +106,9 @@ class TransformerGNN(nn.Module):
 
     def generate_graph(self, data):
         # initalize graph
-        # data.to('cpu')
+        data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-        return data  # .cuda()
+        return data.cuda()
 
     def forward(self, data):
         # compute graph

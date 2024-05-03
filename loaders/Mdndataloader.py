@@ -4,7 +4,6 @@ import os
 import numpy as np
 import torch_geometric as tg
 from sklearn.neighbors import kneighbors_graph
-import open3d as o3d
 import yaml
 
 from torch_geometric.io import read_off
@@ -95,4 +94,4 @@ class Modelnet40(Dataset):
     def get(self, idx):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
-        return data
+        return data.cuda()

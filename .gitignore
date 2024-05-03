@@ -3,3 +3,4 @@ data
 .vscode
 Annotations
 model_checkpoints
+extract_pointcloud.ipynb
