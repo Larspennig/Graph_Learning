@@ -42,20 +42,26 @@ class PointTrans_Layer_down(nn.Module):
         self.perc_points = perc_down
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
+        self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
+                                        torch.nn.BatchNorm1d(out_channels),
+                                        torch.nn.ReLU())
 
     def forward(self, data):
-        data.x = self.linear(data.x.float())
-        # uniform sampling
+        data.x = self.down(data.x.float())
+        ''' uniform sampling
         index = np.random.choice(data.x.shape[0],
                                  size=int(
                                      np.round(data.x.shape[0]*self.perc_points)),
                                  replace=False)
         index = np.sort(index)
+        '''
         # farthest point sampling
-        # index = tgnn.pool.fps(
-        #    data.x, ratio=self.perc_points).unique().sort().values
-        max_pooled_data = tgnn.max_pool_neighbor_x(data)
+        index = tgnn.pool.fps(
+            data.pos, ratio=self.perc_points)
+        index = index.sort().values
 
+        # pooling
+        max_pooled_data = tgnn.max_pool_neighbor_x(data)
         data.x = max_pooled_data.x[index, :]
         data.pos = max_pooled_data.pos[index]
         data.batch = max_pooled_data.batch[index]

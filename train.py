@@ -69,9 +69,9 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      default_root_dir=output_dir,
                      accelerator='cpu',
                      logger=logger,
-                     log_every_n_steps=5,
-                     limit_train_batches=2,
-                     limit_val_batches=2)
+                     log_every_n_steps=5)
+# limit_train_batches=2,
+# limit_val_batches=2)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,

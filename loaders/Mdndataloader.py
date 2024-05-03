@@ -55,10 +55,16 @@ class Modelnet40(Dataset):
             # Read class label
             label = self.classes[raw_path.split(sep='/')[-2]]
 
+            '''
             # Sample n=1024 points uniformly out of given 10k points
             idx = np.random.choice(
                 np.arange(raw_points.shape[0]), replace=False, size=1024)
             idx.sort()
+            '''
+
+            # Sample n=1024 points by farthest point sampling out of 10k points
+            idx = tg.nn.pool.fps(torch.tensor(pos), ratio=0.1024)
+            idx = idx.sort().values
 
             # Create torch_geometric data and save
             data = tg.data.Data()
