@@ -94,4 +94,4 @@ class Modelnet40(Dataset):
     def get(self, idx):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
-        return data.cuda()
+        return data

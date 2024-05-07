@@ -1,7 +1,6 @@
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 from loaders.Mdndataloader import Modelnet40
-from geometric import Extract_Geometric
 from model.GNN_inf import Lightning_GNN
 from sklearn.model_selection import train_test_split
 import torch_geometric as tg
@@ -29,7 +28,8 @@ train_idx, val_idx = train_test_split(np.arange(len(dataset)),
 
 train_loader = tg.loader.DataLoader(dataset[train_idx],
                                     batch_size=config['batch_size'],
-                                    num_workers=2)
+                                    num_workers=2,
+                                    shuffle=True)
 
 val_loader = tg.loader.DataLoader(dataset[val_idx],
                                   batch_size=config['batch_size'],
@@ -55,7 +55,7 @@ checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
 # logger = CSVLogger(save_dir=output_dir,flush_logs_every_n_steps=10)
 
-wandb_logger = WandbLogger(project='PointTransformer_base_Md40')
+wandb_logger = WandbLogger(project='PointTransformer_base_Md40_loc')
 wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
 wandb_logger.experiment.config['k_graph'] = 16
 
@@ -71,7 +71,7 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      check_val_every_n_epoch=1,
                      callbacks=[checkpoint_callback],
                      default_root_dir=output_dir,
-                     accelerator='gpu',
+                     accelerator='cpu',
                      logger=wandb_logger,
                      log_every_n_steps=1)
 # limit_train_batches=2,

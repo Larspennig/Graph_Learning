@@ -14,12 +14,12 @@ class PointTrans_Layer(nn.Module):
         self.attn = tgnn.models.MLP(
             in_channels=out_channels,
             out_channels=out_channels,
-            hidden_channels=out_channels*2,
+            hidden_channels=out_channels,
             num_layers=2)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
-            hidden_channels=out_channels*2,
+            hidden_channels=out_channels,
             num_layers=2)
 
         self.conv = tgnn.PointTransformerConv(
@@ -96,19 +96,19 @@ class TransformerGNN(nn.Module):
             torch.nn.Linear(in_features=512, out_features=512),
             torch.nn.BatchNorm1d(num_features=512),
             torch.nn.ReLU(),
-            torch.nn.Dropout(p=0.3),
-            torch.nn.Linear(in_features=512, out_features=512),
-            torch.nn.BatchNorm1d(num_features=512),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(p=0.3),
+            # torch.nn.Dropout(p=0.5),
             torch.nn.Linear(in_features=512, out_features=40),
-            torch.nn.Softmax(dim=1))
+            torch.nn.BatchNorm1d(num_features=40),
+            torch.nn.ReLU())
+        # torch.nn.Dropout(p=0.5),
+        # torch.nn.Linear(in_features=512, out_features=40))
+        # torch.nn.Softmax(dim=1))
 
     def generate_graph(self, data):
         # initalize graph
-        data.to('cpu')
+
         data = tg.transforms.KNNGraph(k=16)(data)
-        return data.cuda()
+        return data
 
     def forward(self, data):
         # compute graph

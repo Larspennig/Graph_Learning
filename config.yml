@@ -4,10 +4,10 @@
 checkpoints: 'model_checkpoints/'
 
 # Training parameters
-batch_size: 1
+batch_size: 4
 epochs: 50
-learning_rate: 0.003
-max_epochs: 5
+learning_rate: 0.03
+max_epochs: 50
 
 # Data parameters
 split: 'train'

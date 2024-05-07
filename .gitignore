@@ -4,3 +4,4 @@ data
 Annotations
 model_checkpoints
 extract_pointcloud.ipynb
+wandb

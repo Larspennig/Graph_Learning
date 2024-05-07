@@ -17,26 +17,30 @@ class Lightning_GNN(LightningModule):
         inputs = batch
         target = batch.y.type(torch.LongTensor)
         output = self(inputs)
-        loss = self.loss_fn(output, target.cuda())
+        loss = self.loss_fn(output, target)
         self.log('train_loss', loss.item(), on_epoch=True,
                  batch_size=self.config['batch_size'])
         self.log('curr_train_loss', loss.item(), on_step=True,
                  batch_size=self.config['batch_size'])
         self.log('batch_size', 2)
+        values = output.max(dim=1).indices
+        accr = torch.sum(values == target)/len(target)
+        self.log('train_acc', accr, on_epoch=True,
+                 batch_size=self.config['batch_size'])
         return loss
 
     def validation_step(self, batch):
         inputs = batch
         target = batch.y.type(torch.LongTensor)
         output = self(inputs)
-        loss = self.loss_fn(output, target.cuda())
+        loss = self.loss_fn(output, target)
         self.log('val_loss', loss.item(), on_epoch=True,
                  batch_size=self.config['batch_size'])
         values = output.max(dim=1).indices
-        accr = torch.sum(values == target.cuda())/len(target)
+        accr = torch.sum(values == target)/len(target)
         self.log('val_acc', accr, on_epoch=True,
                  batch_size=self.config['batch_size'])
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.model.parameters(), lr=self.config['learning_rate'])
+        return torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
