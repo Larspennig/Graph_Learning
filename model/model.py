@@ -56,6 +56,7 @@ class PointTrans_Layer_down(nn.Module):
         index = np.sort(index)
         '''
         # farthest point sampling
+        data.to('cpu')
         index = tgnn.pool.fps(
             data.pos, ratio=self.perc_points)
         index = index.sort().values
@@ -66,7 +67,7 @@ class PointTrans_Layer_down(nn.Module):
         data.pos = max_pooled_data.pos[index]
         data.batch = max_pooled_data.batch[index]
 
-        return data
+        return data.to('cuda')
 
 
 class Enc_block(nn.Module):
@@ -106,9 +107,9 @@ class TransformerGNN(nn.Module):
 
     def generate_graph(self, data):
         # initalize graph
-
+        data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-        return data
+        return data.to('cuda')
 
     def forward(self, data):
         # compute graph

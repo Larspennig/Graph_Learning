@@ -4,11 +4,11 @@
 checkpoints: 'model_checkpoints/'
 
 # Training parameters
-batch_size: 5
-epochs: 50
-learning_rate: 0.03
-max_epochs: 50
+batch_size: 20
+epochs: 200
+learning_rate: 0.05
+max_epochs: 200
 
 # Data parameters
 split: 'train'
-root: 'data/Modelnet_resampled/'
+root: '../data/Modelnet_resampled/'

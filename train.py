@@ -10,8 +10,8 @@ import datetime
 import yaml
 import os
 import wandb
-wandb.login()
-
+wandb.login(key='c331d5668617b00bb34d23a4d04208708b8ae588')
+# wandb.login()
 
 # Load array with params from config.yml
 with open('config.yml', 'r') as f:
@@ -72,11 +72,9 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      check_val_every_n_epoch=1,
                      callbacks=[checkpoint_callback],
                      default_root_dir=output_dir,
-                     accelerator='cpu',
+                     accelerator='gpu',
                      logger=wandb_logger,
                      log_every_n_steps=1)
-# limit_train_batches=2,
-# limit_val_batches=2)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,
