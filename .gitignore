@@ -5,3 +5,6 @@ Annotations
 model_checkpoints
 extract_pointcloud.ipynb
 wandb
+lightning_logs
+create_val_set.py
+geometric.py

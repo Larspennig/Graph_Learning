@@ -42,5 +42,15 @@ class Lightning_GNN(LightningModule):
                  batch_size=self.config['batch_size'])
         return loss
 
+    def test_step(self, batch):
+        inputs = batch
+        target = batch.y.type(torch.LongTensor)
+        output = self(inputs)
+        values = output.max(dim=1).indices
+        accr = torch.sum(values == target)/len(target)
+        self.log('test_acc', accr, on_epoch=True,
+                 batch_size=self.config['batch_size'])
+        return accr
+
     def configure_optimizers(self):
         return torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)

@@ -18,20 +18,21 @@ with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Data setup
-dataset = Modelnet40(root=config['root'],
-                     classes_yml='classes.yml',
-                     split=config['split'])
+dataset_train = Modelnet40(root=config['root'],
+                           classes_yml='classes.yml',
+                           split='train')
 
-train_idx, val_idx = train_test_split(np.arange(len(dataset)),
-                                      test_size=0.2,
-                                      shuffle=True)
+dataset_val = Modelnet40(root=config['root'],
+                         classes_yml='classes.yml',
+                         split='val')
 
-train_loader = tg.loader.DataLoader(dataset[train_idx],
+
+train_loader = tg.loader.DataLoader(dataset_train,
                                     batch_size=config['batch_size'],
                                     num_workers=2,
                                     shuffle=True)
 
-val_loader = tg.loader.DataLoader(dataset[val_idx],
+val_loader = tg.loader.DataLoader(dataset_val,
                                   batch_size=config['batch_size'],
                                   num_workers=2)
 
