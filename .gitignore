@@ -6,7 +6,7 @@ model_checkpoints
 extract_pointcloud.ipynb
 wandb
 lightning_logs
-create_val_set.py
+create_splits.py
 geometric.py
 test_loader.ipynb
 test_loader.py

@@ -20,12 +20,11 @@ with open('config.yml', 'r') as f:
 # Data setup
 dataset_train = Modelnet40(root=config['root'],
                            classes_yml='classes.yml',
-                           split='train')
+                           split='train', transform='y')
 
 dataset_val = Modelnet40(root=config['root'],
                          classes_yml='classes.yml',
                          split='val')
-
 
 train_loader = tg.loader.DataLoader(dataset_train,
                                     batch_size=config['batch_size'],

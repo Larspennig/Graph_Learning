@@ -12,6 +12,10 @@ from torch_geometric.io import read_off
 class Modelnet40(Dataset):
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None, split='train', classes_yml=None):
         self.split = split
+        self.transfom = 'y'
+        if transform == 'y':
+            self.transform_1 = tg.transforms.RandomJitter(translate=0.01)
+
         with open(classes_yml, 'r') as f:
             self.classes = yaml.safe_load(f)
         super().__init__(root, transform, pre_transform, pre_filter)
@@ -94,4 +98,14 @@ class Modelnet40(Dataset):
     def get(self, idx):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
+
+        if self.transform == 'y':
+            # Random Jitter
+            data = self.transform_1(data)
+
+            # Random Rotation by +/-90 degrees
+            degree = np.random.choice([-90, 0, 90])
+            data = tg.transforms.RandomRotate(
+                degrees=[degree, degree], axis=1)(data)
+
         return data
