@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
 from torch_geometric.utils import add_self_loops, scatter
+# from create_graph import create_graph
 
 
 class PointTrans_Layer(nn.Module):
@@ -29,6 +30,8 @@ class PointTrans_Layer(nn.Module):
             attn_nn=self.attn)
 
     def forward(self, data):
+        # put create graph here
+
         out = self.conv(x=data.x.float(),
                         pos=data.pos.float(),
                         edge_index=data.edge_index)
@@ -56,9 +59,9 @@ class PointTrans_Layer_down(nn.Module):
         index = np.sort(index)
         '''
         # farthest point sampling
-        data.to('cpu')
+
         index = tgnn.pool.fps(
-            data.pos, ratio=self.perc_points)
+            data.pos, ratio=self.perc_points, batch=data.batch)
         index = index.sort().values
 
         # pooling
@@ -67,7 +70,7 @@ class PointTrans_Layer_down(nn.Module):
         data.pos = max_pooled_data.pos[index]
         data.batch = max_pooled_data.batch[index]
 
-        return data.to('cuda')
+        return data
 
 
 class Enc_block(nn.Module):
@@ -107,9 +110,9 @@ class TransformerGNN(nn.Module):
 
     def generate_graph(self, data):
         # initalize graph
-        data.to('cpu')
+        # data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-        return data.to('cuda')
+        return data
 
     def forward(self, data):
         # compute graph

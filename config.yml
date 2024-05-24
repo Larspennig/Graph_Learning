@@ -11,4 +11,4 @@ max_epochs: 200
 
 # Data parameters
 split: 'train'
-root: '../data/Modelnet_resampled/'
+root: 'data/Modelnet_resampled/'

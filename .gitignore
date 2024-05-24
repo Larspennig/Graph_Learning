@@ -8,3 +8,5 @@ wandb
 lightning_logs
 create_val_set.py
 geometric.py
+test_loader.ipynb
+test_loader.py
