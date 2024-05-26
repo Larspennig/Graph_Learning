@@ -10,10 +10,12 @@ from torch_geometric.io import read_off
 
 
 class Modelnet40(Dataset):
-    def __init__(self, root, transform=None, pre_transform=None, pre_filter=None, split='train', classes_yml=None):
+    def __init__(self, root, transform=None, man_transform=None, pre_transform=None, pre_filter=None, split='train', classes_yml=None):
         self.split = split
-        self.transfom = 'y'
-        if transform == 'y':
+        if man_transform is None:
+            self.man_transform = 'n'
+        if man_transform == 'y':
+            self.man_transform = 'y'
             self.transform_1 = tg.transforms.RandomJitter(translate=0.01)
 
         with open(classes_yml, 'r') as f:
@@ -99,7 +101,7 @@ class Modelnet40(Dataset):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
 
-        if self.transform == 'y':
+        if self.man_transform == 'y':
             # Random Jitter
             data = self.transform_1(data)
 

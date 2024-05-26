@@ -20,7 +20,7 @@ with open('config.yml', 'r') as f:
 # Data setup
 dataset_train = Modelnet40(root=config['root'],
                            classes_yml='classes.yml',
-                           split='train', transform='y')
+                           split='train', man_transform='y')
 
 dataset_val = Modelnet40(root=config['root'],
                          classes_yml='classes.yml',
@@ -71,7 +71,7 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      check_val_every_n_epoch=1,
                      callbacks=[checkpoint_callback],
                      default_root_dir=output_dir,
-                     accelerator='gpu',
+                     accelerator='cpu',
                      logger=wandb_logger,
                      log_every_n_steps=1)
 
