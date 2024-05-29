@@ -15,7 +15,7 @@ class Skewed_Gauss_Graph():
         with torch.no_grad():
             # compute masked attention matrix
 
-            enc_layer = getattr(model.model, enc)
+            enc_layer = getattr(self.model, enc)
             Attn_MLP = enc_layer.pconv.attn
             Pos_MLP = enc_layer.pconv.pos
 
@@ -95,11 +95,13 @@ class Skewed_Gauss_Graph():
             # skew Gaussian
             cov = self.skew_gaussian_3d(diff_mean, factor=factor)
 
-            prob = multivariate_normal.pdf(data.pos, mean=data.pos[i], cov=cov)
+            # compute probability of other nodes in sample
+            prob = multivariate_normal.pdf(
+                data.pos[data.batch == data.batch[i]], mean=data.pos[i], cov=cov, allow_singular=True)
 
             # take most probable k indices
             indices = torch.argsort(torch.tensor(
-                prob), descending=True)[:self.k+1]
+                prob), descending=True)[:self.k+1]+torch.nonzero(data.batch == data.batch[i]).min()
             indices.sort()
 
             # drop self loop
@@ -110,17 +112,6 @@ class Skewed_Gauss_Graph():
                          i] = torch.stack([indices, torch.full_like(indices, i)], dim=0)
         self.model.train()
         return edge_index_n
-
-
-class Delauney_Graph():
-    def __init__(self, data, model, enc):
-        self.model = model
-        self.enc = enc
-        self.data = data
-
-    def create_delauney_graph(data, model, batch):
-        # create graph
-        return 1
 
 
 class Stratified_Graph():
