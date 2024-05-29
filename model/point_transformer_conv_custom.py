@@ -1,6 +1,7 @@
 from typing import Callable, Optional, Tuple, Union
 
 from torch import Tensor
+import torch
 
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
@@ -114,6 +115,7 @@ class PointTransformerConv_Custom(MessagePassing):
         x: Union[Tensor, PairTensor],
         pos: Union[Tensor, PairTensor],
         edge_index: Adj,
+        batch: OptTensor = None,
     ) -> Tensor:
 
         if isinstance(x, Tensor):
@@ -125,6 +127,8 @@ class PointTransformerConv_Custom(MessagePassing):
 
         if isinstance(pos, Tensor):
             pos = (pos, pos)
+
+        self.idx_wo_self_loops = edge_index.shape[1]
 
         if self.add_self_loops:
             if isinstance(edge_index, Tensor):
@@ -147,6 +151,30 @@ class PointTransformerConv_Custom(MessagePassing):
         if self.attn_nn is not None:
             alpha = self.attn_nn(alpha)
         alpha = softmax(alpha, index, ptr, size_i)
+        # keep self_loops
+        alpha_wo_sl = alpha[:self.idx_wo_self_loops, :]
+
+        # compute indices of top scores
+        alpha_mean = alpha_wo_sl.mean(dim=1)
+        scores = alpha_mean.view([32, -1])
+        scores = torch.topk(scores, 16, dim=0).indices
+        scores = torch.sort(scores, dim=0).values
+
+        sum_idx = torch.arange(0, 32*scores.shape[1], 32)
+        scores = (scores+sum_idx[None, :]).T.reshape(-1)
+
+        # create masks for half of the samples
+        mask = torch.zeros_like(alpha[:, 0])
+        mask[scores] = 1
+        mask[self.idx_wo_self_loops:] = 1
+
+        # Mask all other scores
+        alpha = alpha*mask[:, None]
+        x_j = x_j*mask[:, None]
+        delta = delta*mask[:, None]
+
+        # Choose top 16 attention scores from 32
+
         return alpha * (x_j + delta)
 
     def __repr__(self) -> str:

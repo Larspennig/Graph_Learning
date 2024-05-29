@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
 from torch_geometric.utils import add_self_loops, scatter
-from point_transformer_conv_custom import PointTransformerConv_Custom
+from model.point_transformer_conv_custom import PointTransformerConv_Custom
 # from create_graph import create_graph
 
 
@@ -35,7 +35,8 @@ class PointTrans_Layer(nn.Module):
 
         out = self.conv(x=data.x.float(),
                         pos=data.pos.float(),
-                        edge_index=data.edge_index)
+                        edge_index=data.edge_index,
+                        batch=data.batch)
         data.x = out
         return data
 
@@ -112,7 +113,7 @@ class TransformerGNN(nn.Module):
     def generate_graph(self, data):
         # initalize graph
         # data.to('cpu')
-        data = tg.transforms.KNNGraph(k=16)(data)
+        data = tg.transforms.KNNGraph(k=32)(data)
         return data
 
     def forward(self, data):
