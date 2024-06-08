@@ -151,17 +151,28 @@ class PointTransformerConv_Custom(MessagePassing):
         if self.attn_nn is not None:
             alpha = self.attn_nn(alpha)
         alpha = softmax(alpha, index, ptr, size_i)
+
         # keep self_loops
         alpha_wo_sl = alpha[:self.idx_wo_self_loops, :]
 
         # compute indices of top scores
         alpha_mean = alpha_wo_sl.mean(dim=1)
         scores = alpha_mean.view([32, -1])
+
+        # create random scores for random sampling
+        scores = torch.rand(32, alpha_mean.shape[0]//32)
+
+        # filter out topk attn scores
         scores = torch.topk(scores, 16, dim=0).indices
         scores = torch.sort(scores, dim=0).values
 
         sum_idx = torch.arange(0, 32*scores.shape[1], 32)
         scores = (scores+sum_idx[None, :]).T.reshape(-1)
+
+        # instead of masking, build in a learnable threshold
+        ### TO DO ###
+
+        ###########
 
         # create masks for half of the samples
         mask = torch.zeros_like(alpha[:, 0])
@@ -173,7 +184,7 @@ class PointTransformerConv_Custom(MessagePassing):
         x_j = x_j*mask[:, None]
         delta = delta*mask[:, None]
 
-        # Choose top 16 attention scores from 32
+        # save indices of highest attn_points for downsampling
 
         return alpha * (x_j + delta)
 

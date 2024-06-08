@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
 from torch_geometric.utils import add_self_loops, scatter
-from create_graph import Skewed_Gauss_Graph
 # from create_graph import create_graph
 
 
@@ -74,6 +73,18 @@ class PointTrans_Layer_down(nn.Module):
         return data
 
 
+class PointTrans_Layer_up(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.linear1 = torch.nn.Linear(in_features=3, out_features=3)
+        self.linear2 = torch.nn.Linear(in_features=3, out_features=3)
+
+    def forward(self, data):
+        data.x = self.linear1(data.x)
+        data.x = self.linear2(data.x)
+        return data
+
+
 class Enc_block(nn.Module):
     def __init__(self, in_channels, out_channels, perc_down):
         super().__init__()
@@ -117,30 +128,25 @@ class TransformerGNN(nn.Module):
 
     def forward(self, data):
         # compute graph
-        graph = Skewed_Gauss_Graph(model=self, enc='enc1')
-        data.edge_index = graph.create_graph(data=data, factor=5)
+        data = self.generate_graph(data)
 
         # Layers
         x_1 = self.enc1(data)
-        graph = Skewed_Gauss_Graph(model=self, enc='enc2')
-        x_1.edge_index = graph.create_graph(data=x_1, factor=4)
+        x_2 = self.generate_graph(x_1)
 
-        x_2 = self.enc2(x_1)
-        graph = Skewed_Gauss_Graph(model=self, enc='enc3')
-        x_2.edge_index = graph.create_graph(data=x_2, factor=3)
+        x_3 = self.enc2(x_2)
+        x_4 = self.generate_graph(x_3)
 
-        x_3 = self.enc3(x_2)
-        graph = Skewed_Gauss_Graph(model=self, enc='enc4')
-        x_3.edge_index = graph.create_graph(data=x_3, factor=2)
-
-        x_4 = self.enc4(x_3)
-        graph = Skewed_Gauss_Graph(model=self, enc='enc5')
-        x_4.edge_index = graph.create_graph(data=x_4, factor=1)
-
-        x_5 = self.enc5(x_4)
+        x_5 = self.enc3(x_4)
         x_6 = self.generate_graph(x_5)
 
+        x_7 = self.enc4(x_6)
+        x_8 = self.generate_graph(x_7)
+
+        x_9 = self.enc5(x_8)
+        x_10 = self.generate_graph(x_9)
+
         # global_pooling and output head
-        x_out = tgnn.pool.global_mean_pool(x_6.x, x_6.batch)
-        pred = self.output_head(x_out)
+        x_11 = tgnn.pool.global_mean_pool(x_10.x, x_10.batch)
+        pred = self.output_head(x_11)
         return pred

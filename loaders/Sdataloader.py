@@ -65,7 +65,7 @@ class Stanford_Dataset(Dataset):
 
             data = Data(x=torch.from_numpy(point_cloud[:, 3:]), pos=torch.from_numpy(
                 point_cloud[:, :3]), y=labels)
-            data = tg.transforms.KNNGraph(k=6)(data)
+
             if self.pre_filter is not None and not self.pre_filter(data):
                 continue
 

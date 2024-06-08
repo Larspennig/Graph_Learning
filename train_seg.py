@@ -1,7 +1,7 @@
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
-from loaders.Mdndataloader import Modelnet40
-from model.GNN_inf import Lightning_GNN
+from loaders.Sdataloader import Stanford_Dataset
+from model.GNN_inf_seg import Lightning_GNN
 from sklearn.model_selection import train_test_split
 import torch_geometric as tg
 import numpy as np
@@ -18,20 +18,16 @@ with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Data setup
-dataset_train = Modelnet40(root=config['root'],
-                           classes_yml='classes.yml',
-                           split='train', man_transform='y')
+dataset_train = Stanford_Dataset(root='Stanford3dDataset')
 
-dataset_val = Modelnet40(root=config['root'],
-                         classes_yml='classes.yml',
-                         split='val')
+# dataset_val = Stanford_Dataset(root=config['root'])
 
 train_loader = tg.loader.DataLoader(dataset_train,
                                     batch_size=config['batch_size'],
                                     num_workers=2,
                                     shuffle=True)
 
-val_loader = tg.loader.DataLoader(dataset_val,
+val_loader = tg.loader.DataLoader(dataset_train,
                                   batch_size=config['batch_size'],
                                   num_workers=2)
 
