@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
 from torch_geometric.utils import add_self_loops, scatter
+import time
 # from create_graph import create_graph
 
 
@@ -40,9 +41,9 @@ class PointTrans_Layer(nn.Module):
 
 
 class PointTrans_Layer_down(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, perc_down=0.5):
+    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5):
         super().__init__()
-        self.perc_points = perc_down
+        self.perc_points = grid_size
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
         self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
@@ -57,29 +58,31 @@ class PointTrans_Layer_down(nn.Module):
                                      np.round(data.x.shape[0]*self.perc_points)),
                                  replace=False)
         index = np.sort(index)
-        '''
+        
         # farthest point sampling
-
         index = tgnn.pool.fps(
             data.pos, ratio=self.perc_points, batch=data.batch)
         index = index.sort().values
-
+        '''
         # pooling
         max_pooled_data = tgnn.max_pool_neighbor_x(data)
+        '''
         data.x = max_pooled_data.x[index, :]
         data.pos = max_pooled_data.pos[index]
         data.batch = max_pooled_data.batch[index]
-
+        '''
+        del data.edge_index
+        data = tg.transforms.GridSampling(self.perc_points)(max_pooled_data)
         return data
 
 
 class Enc_block(nn.Module):
-    def __init__(self, in_channels, out_channels, perc_down):
+    def __init__(self, in_channels, out_channels, grid_size):
         super().__init__()
         self.pconv = PointTrans_Layer(
             in_channels=in_channels, out_channels=out_channels)
         self.downlayer = PointTrans_Layer_down(
-            in_channels=out_channels, out_channels=out_channels, perc_down=perc_down)
+            in_channels=out_channels, out_channels=out_channels, grid_size=grid_size)
 
     def forward(self, data):
         x_1 = self.pconv(data)
@@ -90,11 +93,19 @@ class Enc_block(nn.Module):
 class TransformerGNN(nn.Module):
     def __init__(self):
         super().__init__()
+        '''
         self.enc1 = Enc_block(in_channels=3, out_channels=32, perc_down=0.5)
         self.enc2 = Enc_block(in_channels=32, out_channels=64, perc_down=0.5)
         self.enc3 = Enc_block(in_channels=64, out_channels=128, perc_down=0.5)
         self.enc4 = Enc_block(in_channels=128, out_channels=256, perc_down=0.5)
         self.enc5 = Enc_block(in_channels=256, out_channels=512, perc_down=0.5)
+        '''
+        self.enc1 = Enc_block(in_channels=3, out_channels=32, grid_size=0.1)
+        self.enc2 = Enc_block(in_channels=32, out_channels=64, grid_size=0.15)
+        self.enc3 = Enc_block(in_channels=64, out_channels=128, grid_size=0.2)
+        self.enc4 = Enc_block(
+            in_channels=128, out_channels=256, grid_size=0.3)
+        self.enc5 = Enc_block(in_channels=256, out_channels=512, grid_size=0.4)
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=512, out_features=512),
@@ -112,7 +123,6 @@ class TransformerGNN(nn.Module):
         # initalize graph
         # data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-
         # add edge_index with kNN in feature space
         edge_index_f = tg.nn.knn_graph(
             data.x, k=16, batch=data.batch, loop=False, cosine=False, flow='source_to_target')
