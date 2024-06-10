@@ -5,11 +5,14 @@ import numpy as np
 import torch_geometric as tg
 from sklearn.neighbors import kneighbors_graph
 import torch_geometric as tgg
+import yaml
 
 
 class Stanford_Dataset(Dataset):
     def __init__(self, root, transform=None, split='train', pre_transform=None, pre_filter=None):
         self.split = split
+        with open('classes_seg.yml', 'r') as f:
+            self.classes = yaml.safe_load(f)
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
@@ -62,7 +65,10 @@ class Stanford_Dataset(Dataset):
                                        delimiter=' ')
 
                 point_cloud = np.concatenate([point_cloud, obj_array])
-                labels = labels+[f'{obj[:-6]}']*len(obj_array)
+                labels = labels + [f"{obj.split(sep='_')[0]}"] * len(obj_array)
+
+            # transform labels
+            labels = torch.tensor([self.classes[label] for label in labels])
 
             data = Data(x=torch.from_numpy(point_cloud[:, 3:]),
                         pos=torch.from_numpy(point_cloud[:, :3]),

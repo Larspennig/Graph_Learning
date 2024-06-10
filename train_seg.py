@@ -70,7 +70,8 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      default_root_dir=output_dir,
                      accelerator='cpu',
                      logger=wandb_logger,
-                     log_every_n_steps=1)
+                     log_every_n_steps=1,
+                     limit_val_batches=1)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,

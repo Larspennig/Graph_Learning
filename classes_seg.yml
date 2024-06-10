@@ -1,0 +1,16 @@
+# Translating class numbers in Stanford 3d dataset
+
+
+ceiling: 0
+floor: 1
+wall: 2
+clutter: 3
+column: 4
+beam: 5
+window: 6
+door: 7
+table: 8
+chair: 9
+sofa: 10
+bookcase: 11
+board: 12
