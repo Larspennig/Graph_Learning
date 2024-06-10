@@ -18,7 +18,8 @@ with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Data setup
-dataset_train = Stanford_Dataset(root='Stanford3dDataset')
+dataset_train = Stanford_Dataset(root='Stanford3dDataset',
+                                 split='train')
 
 # dataset_val = Stanford_Dataset(root=config['root'])
 

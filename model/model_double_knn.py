@@ -115,7 +115,7 @@ class TransformerGNN(nn.Module):
 
         # add edge_index with kNN in feature space
         edge_index_f = tg.nn.knn_graph(
-            data.x, k=16, batch=data.batch, loop=False, flow='source_to_target')
+            data.x, k=16, batch=data.batch, loop=False, cosine=False, flow='source_to_target')
         data.edge_index = torch.cat([data.edge_index, edge_index_f], dim=1)
         return data
 

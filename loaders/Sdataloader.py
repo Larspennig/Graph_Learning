@@ -4,10 +4,12 @@ import os
 import numpy as np
 import torch_geometric as tg
 from sklearn.neighbors import kneighbors_graph
+import torch_geometric as tgg
 
 
 class Stanford_Dataset(Dataset):
-    def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(self, root, transform=None, split='train', pre_transform=None, pre_filter=None):
+        self.split = split
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
@@ -30,6 +32,9 @@ class Stanford_Dataset(Dataset):
         obj_list = []
 
         for area in os.listdir(self.root+'/processed/'):
+            if self.split == 'test':
+                if area != 'Area_5':
+                    continue
             area_list.append(area)
             for obj in os.listdir(self.root+'/processed/'+area):
                 obj_list.append(area+'/'+obj)
@@ -49,29 +54,26 @@ class Stanford_Dataset(Dataset):
             for obj in obj_list:
                 if obj == '.DS_Store':
                     continue
-                with open(raw_path+f'/Annotations/{obj}') as f:
-                    lines = f.readlines()
+                if obj == 'Icon':
+                    continue
 
-                lines = np.array(lines)
-
-                # Store the lines in a NumPy array
-                obj_array = np.zeros((len(lines), 6))
-                for i in range(len(obj_array)):
-                    obj_array[i, :] = np.array(lines[i].split(sep=' '))
+                # load point_cloud and labels
+                obj_array = np.loadtxt(raw_path+f'/Annotations/{obj}',
+                                       delimiter=' ')
 
                 point_cloud = np.concatenate([point_cloud, obj_array])
+                labels = labels+[f'{obj[:-6]}']*len(obj_array)
 
-                labels = labels+[f'{obj}']*len(obj_array)
+            data = Data(x=torch.from_numpy(point_cloud[:, 3:]),
+                        pos=torch.from_numpy(point_cloud[:, :3]),
+                        y=labels)
 
-            data = Data(x=torch.from_numpy(point_cloud[:, 3:]), pos=torch.from_numpy(
-                point_cloud[:, :3]), y=labels)
-
-            if self.pre_filter is not None and not self.pre_filter(data):
-                continue
+            data = tg.transforms.GridSampling(0.03)(data)
 
             if self.pre_transform is not None:
                 data = self.pre_transform(data)
 
+            # save pointcloud
             torch.save(data, self.processed_dir+'/'+raw_path.split(sep='/')
                        [-2]+'/'+raw_path.split(sep='/')[-1]+'.pt')
             idx += 1
