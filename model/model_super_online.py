@@ -23,16 +23,17 @@ class generate_graph(nn.Module):
 
     def forward(self, data):
         # initalize graph
-        # data.to('cpu')
+        data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
+        data.cuda()
         # add edge_index with kNN in feature space
 
         # better solution? to make neighbors deterministic?
         emb_g = self.MLP(data.x)
-        rand_scores = torch.rand_like(emb_g) * 0.001
+        rand_scores = torch.rand_like(emb_g).cuda() * 0.001
         emb_g = emb_g + rand_scores
-        data.soft_index_i = torch.zeros((2, 0), dtype=torch.long)
-        data.soft_index_v = torch.zeros((2, 0), dtype=torch.float)
+        data.soft_index_i = torch.zeros((2, 0), dtype=torch.long).cuda()
+        data.soft_index_v = torch.zeros((2, 0), dtype=torch.float).cuda()
 
         for i in data.batch.unique():
             dist = emb_g[data.batch == i][:, None] - \
@@ -43,7 +44,7 @@ class generate_graph(nn.Module):
 
             # sample k from neighbors with gumbel loss
             gumbel_noise = - \
-                torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
+                torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20).cuda()
             noisy_logits = torch.log(p + 1e-20) + gumbel_noise
 
             top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=0)
@@ -52,9 +53,9 @@ class generate_graph(nn.Module):
             min_index = (data.batch == i).nonzero().min()
 
             data.soft_index_i = torch.cat([data.soft_index_i, torch.stack([top_edges_i.T.flatten()+min_index, torch.arange(
-                top_edges_i.shape[1]).repeat_interleave(self.k)+min_index], dim=0)], dim=1)
+                top_edges_i.shape[1]).repeat_interleave(self.k).cuda()+min_index], dim=0)], dim=1)
             data.soft_index_v = torch.cat([data.soft_index_v, torch.stack([top_edges_v.T.flatten(), torch.arange(
-                top_edges_v.shape[1]).repeat_interleave(self.k)+min_index], dim=0)], dim=1)
+                top_edges_v.shape[1]).repeat_interleave(self.k).cuda()+min_index], dim=0)], dim=1)
 
         data.edge_index = torch.cat(
             [data.soft_index_i, data.edge_index], dim=1)
@@ -127,7 +128,9 @@ class PointTrans_Layer_down(nn.Module):
         data.batch = max_pooled_data.batch[index]
         '''
         del data.edge_index
+        data.to('cpu')
         data = tg.transforms.GridSampling(self.perc_points)(max_pooled_data)
+        data.cuda()
         return data
 
 

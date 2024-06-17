@@ -109,6 +109,10 @@ class PointTransformerConv_Super(MessagePassing):
         self.lin_src = Linear(in_channels[0], out_channels, bias=False)
         self.lin_dst = Linear(in_channels[1], out_channels, bias=False)
 
+        # add parameter of how much should i use new values
+
+        self.alpha = torch.nn.Parameter(torch.tensor(0.0), requires_grad=True)
+
         self.reset_parameters()
 
     def reset_parameters(self):
