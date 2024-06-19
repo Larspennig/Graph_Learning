@@ -16,14 +16,17 @@ from torch_geometric.typing import (
 from torch_geometric.utils import add_self_loops, remove_self_loops, softmax
 
 
-class StraightThroughEstimator(torch.autograd.Function):
+class StraightThrough(torch.autograd.Function):
     @staticmethod
-    def forward(x, edge_index_soft_idx, edge_index_soft_v):
-        return x
+    def forward(ctx, alpha, factor):
+        ctx.save_for_backward(alpha, factor) 
+        return alpha
 
     @staticmethod
-    def backward(x, edge_index_soft_idx, edge_index_soft_v, grad_output):
-        return grad_output
+    def backward(ctx, grad_output):
+        alpha, factor = ctx.saved_tensors
+        return grad_output, (alpha*grad_output).sum(dim=1) 
+
 
 
 class PointTransformerConv_Super(MessagePassing):
@@ -164,10 +167,13 @@ class PointTransformerConv_Super(MessagePassing):
         alpha = alpha_i - alpha_j + delta
         if self.attn_nn is not None:
             alpha = self.attn_nn(alpha)
-        alpha = softmax(alpha, index, ptr, size_i)
         factor = torch.cat([edge_index_soft_v[0, :], torch.ones(
             edge_index.shape[1]-edge_index_soft_v.shape[1])], dim=0)
-        return factor[:, None]*alpha * (x_j + delta)
+        alpha = StraightThrough.apply(alpha, factor)
+        #alpha = factor[:, None]*alpha
+        alpha = softmax(alpha, index, ptr, size_i)
+
+        return alpha * (x_j + delta)
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '

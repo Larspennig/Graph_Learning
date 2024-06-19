@@ -10,6 +10,7 @@ from model.point_transformer_conv_super import PointTransformerConv_Super
 # from create_graph import create_graph
 
 
+
 class generate_graph(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
@@ -45,6 +46,10 @@ class generate_graph(nn.Module):
             gumbel_noise = - \
                 torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
             noisy_logits = torch.log(p + 1e-20) + gumbel_noise
+
+            # set diagonal elements to zero
+            noisy_logits = noisy_logits - \
+                torch.eye(noisy_logits.shape[0])*50
 
             top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=0)
             top_edges_v = torch.softmax(top_edges_v, dim=0)
