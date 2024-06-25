@@ -12,7 +12,7 @@ with open('config.yml', 'r') as f:
 
 GNN_model = Lightning_GNN(config=config)
 GNN_model.to('cuda')
-GNN_model.load_state_dict(torch.load('model_checkpoints/2024-06-19_14.45.46/epoch=11-train_loss=0.66.ckpt')['state_dict'])
+GNN_model.load_state_dict(torch.load('model_checkpoints/2024-06-19_14.45.46/epoch=11-train_loss=0.66.ckpt'))
 GNN_model.to('cpu')
 
 torch.save(GNN_model.state_dict(), 'GNN_model_params.pt')

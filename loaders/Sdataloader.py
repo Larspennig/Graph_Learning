@@ -38,6 +38,9 @@ class Stanford_Dataset(Dataset):
             if self.split == 'test':
                 if area != 'Area_5':
                     continue
+            if self.split == 'train':
+                if area == 'Area_5':
+                    continue
             area_list.append(area)
             for obj in os.listdir(self.root+'/processed/'+area):
                 obj_list.append(area+'/'+obj)

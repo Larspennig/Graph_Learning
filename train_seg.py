@@ -52,13 +52,13 @@ checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
 # logger = CSVLogger(save_dir=output_dir,flush_logs_every_n_steps=10)
 
-wandb_logger = WandbLogger(project='PointTransformer_base_Md40_loc')
+wandb_logger = WandbLogger(project='PointTransformer_Segmentation',)
 wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
 wandb_logger.experiment.config['k_graph'] = 16
 
 
 checkpoint_callback = ModelCheckpoint(save_top_k=3,
-                                      monitor='val_loss',
+                                      monitor='train_acc',
                                       mode='min',
                                       dirpath=output_dir,
                                       filename=checkpoint_filename)
@@ -71,7 +71,7 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      accelerator='cpu',
                      logger=wandb_logger,
                      log_every_n_steps=1,
-                     limit_val_batches=1)
+                     limit_val_batches=2)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,

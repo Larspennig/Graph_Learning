@@ -45,7 +45,7 @@ class generate_graph(nn.Module):
             # sample k from neighbors with gumbel loss
             gumbel_noise = - \
                 torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
-            noisy_logits = torch.log(p + 1e-20) + gumbel_noise
+            noisy_logits = torch.log(p + 1e-20) #+ gumbel_noise
 
             # set diagonal elements to zero
             noisy_logits = noisy_logits - \
