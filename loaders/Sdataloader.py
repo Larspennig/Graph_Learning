@@ -13,6 +13,9 @@ class Stanford_Dataset(Dataset):
         self.split = split
         with open('classes_seg.yml', 'r') as f:
             self.classes = yaml.safe_load(f)
+        self.transform_1 = tg.transforms.RandomJitter(translate=0.015)
+        self.transform_2 = tg.transforms.RandomRotate(180, axis=2)
+
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
@@ -94,4 +97,7 @@ class Stanford_Dataset(Dataset):
     def get(self, idx):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
+        
+        data = self.transform_1(data)
+        data = self.transform_2(data)
         return data

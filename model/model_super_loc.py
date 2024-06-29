@@ -35,33 +35,34 @@ class generate_graph(nn.Module):
         data.soft_index_i = torch.zeros((2, 0), dtype=torch.long)
         data.soft_index_v = torch.zeros((2, 0), dtype=torch.float)
 
-        for i in data.batch.unique():
-            dist = emb_g[data.batch == i][:, None] - \
-                emb_g[data.batch == i][None, :]
-            dist = torch.norm(dist, dim=-1)
-            # calculate connection probability
-            p = torch.exp(-self.t*dist**2)
+        edges_large = tg.transforms.KNNGraph(k=128)(data).edge_index
 
-            # sample k from neighbors with gumbel loss
-            gumbel_noise = - \
-                torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
-            noisy_logits = torch.log(p + 1e-20) + gumbel_noise
+        dist = torch.norm(emb_g[edges_large[0]] - emb_g[edges_large[1]], dim = 1)
 
-            # set diagonal elements to zero not to include self-edges
-            noisy_logits = noisy_logits - \
-                torch.eye(noisy_logits.shape[0])*50
+        # calculate connection probability
+        p = torch.exp(-self.t*dist**2)
 
-            top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=0)
-            top_edges_v = torch.softmax(top_edges_v, dim=0)
-            top_edges_v = top_edges_v / top_edges_v.max(dim=0).values
-            min_index = (data.batch == i).nonzero().min()
+        # reshape per node
+        p = p.reshape(-1, 128)
 
-            data.soft_index_i = torch.cat([data.soft_index_i, 
-                                           torch.stack([top_edges_i.T.flatten()+min_index, 
-                                                        torch.arange(top_edges_i.shape[1]).repeat_interleave(self.k)+min_index], dim=0)], dim=1)
-            data.soft_index_v = torch.cat([data.soft_index_v, 
-                                           torch.stack([top_edges_v.T.flatten(), 
-                                                        torch.arange(top_edges_v.shape[1]).repeat_interleave(self.k)+min_index], dim=0)], dim=1)
+        # sample k from neighbors with gumbel loss
+        gumbel_noise = - \
+            torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
+        noisy_logits = torch.log(p + 1e-20) + gumbel_noise
+
+        top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=1)
+        top_edges_v = torch.softmax(top_edges_v, dim=1)
+
+        top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None]*128
+        top_edges_i = top_edges_i.flatten()
+
+        top_edges_v = top_edges_v.flatten()
+
+        edges_sparse = edges_large[:,top_edges_i]
+        edges_sparse_v = torch.stack([top_edges_v, edges_sparse[1,:]], dim=0)
+
+        data.soft_index_i = edges_sparse
+        data.soft_index_v = edges_sparse_v
 
         data.edge_index = torch.cat(
             [data.soft_index_i, data.edge_index], dim=1)

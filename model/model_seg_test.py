@@ -10,7 +10,7 @@ from torch_geometric.utils import add_self_loops, scatter
 
 def generate_graph(data):
     # initalize graph
-    # data.to('cpu')
+    data.to('cpu')
     data = tg.transforms.KNNGraph(k=16)(data)
     return data
 
@@ -40,7 +40,6 @@ class PointTrans_Layer(nn.Module):
             attn_nn=self.attn)
 
     def forward(self, data):
-        # put create graph here
 
         out = self.conv(x=data.x.float(),
                         pos=data.pos.float(),
@@ -69,7 +68,7 @@ class PointTrans_Layer_down(nn.Module):
         # pooling and maxpool
         max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
         del max_pooled_data.edge_index
-        data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data)
+        data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
         return data_out
 
 
@@ -87,14 +86,15 @@ class PointTrans_Layer_up(nn.Module):
         data_1.x = self.linear1(data_1.x.float())
         # skip connection input
         data_2.x = self.linear2(data_2.x.float())
-
+        data_1.to('cpu')
+        data_2.to('cpu')
         # interpolation
         x_int = tg.nn.unpool.knn_interpolate(x=data_1.x,
                                              pos_x=data_1.pos,
                                              pos_y=data_2.pos,
                                              batch_x=data_1.batch,
                                              batch_y=data_2.batch,
-                                             k=8)
+                                             k=16)
 
         data = tg.data.Data(x=x_int, pos=data_2.pos, batch=data_2.batch)
         return data
@@ -131,7 +131,6 @@ class Dec_block(nn.Module):
         x_2 = self.pconv(x_1)
         return x_2
 
-
 class TransformerGNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -163,7 +162,7 @@ class TransformerGNN(nn.Module):
 
     def generate_graph(self, data):
         # initalize graph
-        # data.to('cpu')
+        data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
         return data
 
@@ -193,3 +192,5 @@ class TransformerGNN(nn.Module):
         # output
         x_10 = self.output_head(x_10.x.float())
         return x_10
+
+
