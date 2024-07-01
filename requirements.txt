@@ -1,0 +1,8 @@
+torch
+torchvision
+torch_geometric
+torch_cluster
+lightning
+pyyml
+scikit-learn
+wandb

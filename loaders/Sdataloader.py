@@ -44,6 +44,8 @@ class Stanford_Dataset(Dataset):
             if self.split == 'train':
                 if area == 'Area_5':
                     continue
+            if area == 'pre_transform.pt' or area == 'pre_filter.pt':
+                continue
             area_list.append(area)
             for obj in os.listdir(self.root+'/processed/'+area):
                 obj_list.append(area+'/'+obj)
