@@ -1,7 +1,7 @@
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
-from loaders.Mdndataloader import Modelnet40
-from model.GNN_inf import Lightning_GNN
+from loaders.Sdataloader import Stanford_Dataset
+from model.GNN_inf_seg import Lightning_GNN
 from sklearn.model_selection import train_test_split
 import torch_geometric as tg
 import numpy as np
@@ -14,24 +14,22 @@ wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
 # wandb.login()
 
 # Load array with params from config.yml
-with open('configs/config.yml', 'r') as f:
+with open('configs/config_S3DIS.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Data setup
-dataset_train = Modelnet40(root=config['root'],
-                           classes_yml='classes.yml',
-                           split='train', man_transform='y')
+dataset_train = Stanford_Dataset(root=config['root'],
+                                 split='train')
 
-dataset_val = Modelnet40(root=config['root'],
-                         classes_yml='classes.yml',
-                         split='val')
+dataset_val = Stanford_Dataset(root=config['root'],
+                               split = 'test')
 
 train_loader = tg.loader.DataLoader(dataset_train,
                                     batch_size=config['batch_size'],
                                     num_workers=2,
                                     shuffle=True)
 
-val_loader = tg.loader.DataLoader(dataset_val,
+val_loader = tg.loader.DataLoader(dataset_train,
                                   batch_size=config['batch_size'],
                                   num_workers=2)
 
@@ -55,14 +53,14 @@ checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
 # logger = CSVLogger(save_dir=output_dir,flush_logs_every_n_steps=10)
 
-wandb_logger = WandbLogger(project='PointTransformer_base_Md40_loc')
+wandb_logger = WandbLogger(project='PointTransformer_Segmentation',)
 wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
-wandb_logger.experiment.config['k_graph'] = 16
+wandb_logger.experiment.config['k_down'] = 16
 
 
 checkpoint_callback = ModelCheckpoint(save_top_k=3,
-                                      monitor='val_loss',
-                                      mode='min',
+                                      monitor='train_acc',
+                                      mode='max',
                                       dirpath=output_dir,
                                       filename=checkpoint_filename)
 
@@ -73,7 +71,8 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      default_root_dir=output_dir,
                      accelerator='cpu',
                      logger=wandb_logger,
-                     log_every_n_steps=1)
+                     log_every_n_steps=1,
+                     limit_val_batches=2)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,

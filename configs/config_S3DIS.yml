@@ -1,0 +1,28 @@
+# Configuration for Graph Learning
+
+# Device
+device: 'cpu'
+
+# Model setup
+checkpoints: 'model_checkpoints/'
+
+# Training parameters
+batch_size: 2
+epochs: 200
+learning_rate: 0.05
+max_epochs: 200
+
+# Data parameters
+root: 'data/Stanford3dDataset/'
+sample_size : 0.3  # only Stanford3d
+
+# Model parameters
+model: 'standard'
+num_classes : 14
+grid_size : [0.9,1.6,2,2.5]
+k_up : 16
+k_down : 16
+
+# scheduler
+step_size: 20
+

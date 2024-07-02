@@ -8,11 +8,11 @@ from torch_geometric.utils import add_self_loops, scatter
 # from create_graph import create_graph
 
 
-def generate_graph(data):
+def generate_graph(data, device='cpu', k=16):
     # initalize graph
-    # data.to('cpu')
-    data = tg.transforms.KNNGraph(k=16)(data)
-    return data
+    data.to('cpu')
+    data = tg.transforms.KNNGraph(k=k)(data)
+    return data.to(device)
 
 
 class PointTrans_Layer(nn.Module):
@@ -53,9 +53,10 @@ class PointTrans_Layer(nn.Module):
 
 
 class PointTrans_Layer_down(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5):
+    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cpu'):
         super().__init__()
         self.grid_size = grid_size
+        self.device = device
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
         self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
@@ -65,18 +66,20 @@ class PointTrans_Layer_down(nn.Module):
     def forward(self, data):
         # linear projection
         data_up = tg.data.Data(x=self.down(data.x.float()),
-                               batch=data.batch, pos=data.pos, y=data.y, edge_index=data.edge_index)
+                               batch=data.batch.long(), pos=data.pos, y=data.y.long(), edge_index=data.edge_index)
         # pooling and maxpool
         max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
         del max_pooled_data.edge_index
-        data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data)
-        return data_out
+        data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
+        return data_out.to(self.device)
 
 
 class PointTrans_Layer_up(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3) -> None:
+    def __init__(self, in_channels=3, out_channels=3, device='cpu', k_up=8) -> None:
         super().__init__()
         # replace with sequential batchnorm and relu
+        self.device= 'cpu'
+        self.k_up = k_up
         self.linear1 = torch.nn.Linear(
             in_features=in_channels, out_features=out_channels)
         self.linear2 = torch.nn.Linear(
@@ -89,20 +92,22 @@ class PointTrans_Layer_up(nn.Module):
         data_2.x = self.linear2(data_2.x.float())
 
         # interpolation
-        x_int = tg.nn.unpool.knn_interpolate(x=data_1.x,
-                                             pos_x=data_1.pos,
-                                             pos_y=data_2.pos,
-                                             batch_x=data_1.batch,
-                                             batch_y=data_2.batch,
-                                             k=8)
+        x_int = tg.nn.unpool.knn_interpolate(x=data_1.x.to('cpu'),
+                                             pos_x=data_1.pos.to('cpu'),
+                                             pos_y=data_2.pos.to('cpu'),
+                                             batch_x=data_1.batch.to('cpu'),
+                                             batch_y=data_2.batch.to('cpu'),
+                                             k=self.k_up)
 
         data = tg.data.Data(x=x_int, pos=data_2.pos, batch=data_2.batch)
-        return data
+        return data.to(self.device)
 
 
 class Enc_block(nn.Module):
-    def __init__(self, in_channels, out_channels, grid_size):
+    def __init__(self, in_channels, out_channels, grid_size, config):
         super().__init__()
+        self.k_down = config['k_down']
+        self.device = config['device']
         self.downlayer = PointTrans_Layer_down(in_channels=in_channels,
                                                out_channels=out_channels,
                                                grid_size=grid_size)
@@ -112,14 +117,15 @@ class Enc_block(nn.Module):
 
     def forward(self, data):
         x_1 = self.downlayer(data)
-        x_1 = generate_graph(x_1)
+        x_1 = generate_graph(x_1, device=self.device, k=self.k_down)
         x_2 = self.pconv(x_1)
         return x_2
 
 
 class Dec_block(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, config):
         super().__init__()
+        self.config = config
         self.uplayer = PointTrans_Layer_up(
             in_channels=in_channels, out_channels=out_channels)
         self.pconv = PointTrans_Layer(
@@ -127,45 +133,46 @@ class Dec_block(nn.Module):
 
     def forward(self, data_1, data_2):
         x_1 = self.uplayer(data_1, data_2)
-        x_1 = generate_graph(x_1)
+        x_1 = generate_graph(x_1, device=self.config['device'], k=self.config['k_up'])
         x_2 = self.pconv(x_1)
         return x_2
 
 
 class TransformerGNN(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+        self.config = config
         self.linear = torch.nn.Linear(in_features=3, out_features=32)
         self.pconv_in = PointTrans_Layer(in_channels=32, out_channels=32)
 
-        self.enc1 = Enc_block(in_channels=32, out_channels=64, grid_size=0.3)
-        self.enc2 = Enc_block(in_channels=64, out_channels=128, grid_size=0.6)
-        self.enc3 = Enc_block(in_channels=128, out_channels=256, grid_size=1)
-        self.enc4 = Enc_block(in_channels=256, out_channels=512, grid_size=2)
+        self.enc1 = Enc_block(in_channels=32, out_channels=64, grid_size=config['grid_size'][0], config=config)
+        self.enc2 = Enc_block(in_channels=64, out_channels=128, grid_size=config['grid_size'][1], config=config)
+        self.enc3 = Enc_block(in_channels=128, out_channels=256, grid_size=config['grid_size'][2], config=config)
+        self.enc4 = Enc_block(in_channels=256, out_channels=512, grid_size=config['grid_size'][3], config=config)
 
         self.linear_mid = torch.nn.Linear(in_features=512, out_features=512)
         self.pconv_mid = PointTrans_Layer(in_channels=512, out_channels=512)
 
-        self.dec1 = Dec_block(in_channels=512, out_channels=256)
-        self.dec2 = Dec_block(in_channels=256, out_channels=128)
-        self.dec3 = Dec_block(in_channels=128, out_channels=64)
-        self.dec4 = Dec_block(in_channels=64, out_channels=32)
+        self.dec1 = Dec_block(in_channels=512, out_channels=256, config=config)
+        self.dec2 = Dec_block(in_channels=256, out_channels=128, config=config)
+        self.dec3 = Dec_block(in_channels=128, out_channels=64, config=config)
+        self.dec4 = Dec_block(in_channels=64, out_channels=32, config=config)
 
         self.linear_out = torch.nn.Linear(in_features=32, out_features=13)
 
         self.output_head = torch.nn.Sequential(
-            torch.nn.Linear(in_features=32, out_features=32),
-            torch.nn.BatchNorm1d(num_features=32),
+            torch.nn.Linear(in_features=32, out_features=50),
+            torch.nn.BatchNorm1d(num_features=50),
             torch.nn.ReLU(),
-            torch.nn.Linear(in_features=32, out_features=14),
-            torch.nn.BatchNorm1d(num_features=14),
+            torch.nn.Linear(in_features=50, out_features=config['num_classes']),
+            torch.nn.BatchNorm1d(num_features=config['num_classes']),
             torch.nn.ReLU())
 
     def generate_graph(self, data):
         # initalize graph
-        # data.to('cpu')
-        data = tg.transforms.KNNGraph(k=16)(data)
-        return data
+        data.to('cpu')
+        data = tg.transforms.KNNGraph(k=self.config['k_down'])(data)
+        return data.to(self.config['device'])
 
     def forward(self, data):
         # first_block

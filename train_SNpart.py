@@ -1,6 +1,6 @@
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
-from loaders.Sdataloader import Stanford_Dataset
+from loaders.Sndataloader import SNpart_Dataset
 from model.GNN_inf_seg import Lightning_GNN
 from sklearn.model_selection import train_test_split
 import torch_geometric as tg
@@ -14,14 +14,15 @@ wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
 # wandb.login()
 
 # Load array with params from config.yml
-with open('config.yml', 'r') as f:
+with open('configs/config_SNpart.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Data setup
-dataset_train = Stanford_Dataset(root='Stanford3dDataset',
+dataset_train = SNpart_Dataset(root=config['root'],
                                  split='train')
 
-# dataset_val = Stanford_Dataset(root=config['root'])
+dataset_val = SNpart_Dataset(root=config['root'],
+                               split = 'val')
 
 train_loader = tg.loader.DataLoader(dataset_train,
                                     batch_size=config['batch_size'],
@@ -35,8 +36,10 @@ val_loader = tg.loader.DataLoader(dataset_train,
 # Model setup
 GNN_model = Lightning_GNN(config=config)
 
-data = next(iter(train_loader))
-GNN_model(data)
+#data = next(iter(train_loader))
+#GNN_model(data)
+
+GNN_model.to(config['device'])
 
 
 def count_parameters(model):
@@ -54,12 +57,12 @@ checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
 wandb_logger = WandbLogger(project='PointTransformer_Segmentation',)
 wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
-wandb_logger.experiment.config['k_graph'] = 16
+wandb_logger.experiment.config['k_down'] = 16
 
 
 checkpoint_callback = ModelCheckpoint(save_top_k=3,
                                       monitor='train_acc',
-                                      mode='min',
+                                      mode='max',
                                       dirpath=output_dir,
                                       filename=checkpoint_filename)
 
@@ -68,10 +71,11 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      check_val_every_n_epoch=1,
                      callbacks=[checkpoint_callback],
                      default_root_dir=output_dir,
-                     accelerator='cpu',
+                     accelerator=config['device'],
                      logger=wandb_logger,
                      log_every_n_steps=1,
-                     limit_val_batches=2)
+                     limit_val_batches=2,
+                     limit_train_batches=2)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,
