@@ -17,7 +17,7 @@ class SNpart_Dataset(Dataset):
             lines = f.readlines()
         self.item_dict = {line.split()[0]: int(line.split()[1]) for line in lines}
         
-        self.transform_1 = tg.transforms.RandomJitter(translate=0.015)
+        self.transform_1 = tg.transforms.RandomJitter(translate=0.0001)
         self.transform_2 = tg.transforms.RandomRotate(180, axis=2)
 
         super().__init__(root, transform, pre_transform, pre_filter)
@@ -59,7 +59,13 @@ class SNpart_Dataset(Dataset):
                 cloud = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(data[i,:,:]))
                 cloud.estimate_normals()
                 normals = torch.Tensor(np.array(cloud.normals))
-                pc = Data(x=normals, pos = torch.Tensor(np.array(data[i,:,:])), y=torch.Tensor(pid[i,:]))
+
+                pos = torch.Tensor(np.array(data[i,:,:]))
+                # normalize pos
+                pos = pos - pos.mean(dim=0, keepdim=True)
+                pos = pos / torch.norm(pos, dim=0).max()
+
+                pc = Data(x=normals, pos = pos, y=torch.Tensor(pid[i,:]))
                 obj = torch.Tensor(labels[i])
                 torch.save((pc,obj), self.processed_dir+'/'+'part_'+str(idx).zfill(5)+'.pt')
 
@@ -93,6 +99,6 @@ class SNpart_Dataset(Dataset):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
         
-        #data = self.transform_1(data)
-        #data = self.transform_2(data)
+        data = self.transform_1(data)
+        data = self.transform_2(data)
         return data[0]

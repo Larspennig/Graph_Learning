@@ -64,7 +64,7 @@ class PointTrans_Layer_down(nn.Module):
                                         torch.nn.ReLU())
 
     def forward(self, data):
-        # linear projection
+        # linear projectionlong
         data_up = tg.data.Data(x=self.down(data.x.float()),
                                batch=data.batch.long(), pos=data.pos, y=data.y.long(), edge_index=data.edge_index)
         # pooling and maxpool

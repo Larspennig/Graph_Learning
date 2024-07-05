@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 # Device
-device: 'cuda'
+device: 'cpu'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
