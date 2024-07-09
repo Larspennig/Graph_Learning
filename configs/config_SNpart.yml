@@ -1,12 +1,12 @@
 # Configuration for Graph Learning
 
 # Device
-device: 'cpu'
+device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
-subsampling: 'grid' # or grid
+model: 'super'
+subsampling: 'fps' # or grid
 
 # Training parameters
 batch_size: 2

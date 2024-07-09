@@ -25,7 +25,7 @@ class generate_graph(nn.Module):
         # initalize graph
         data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-        edges_large = tg.transforms.KNNGraph(k=128)(data).edge_index
+        edges_large = tg.transforms.KNNGraph(k=180)(data).edge_index.to(self.device)
         # add edge_index with kNN in feature space
         data.to(self.device)
 
@@ -115,26 +115,40 @@ class PointTrans_Layer(nn.Module):
 
 
 class PointTrans_Layer_down(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cpu'):
+    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cpu', subsampling = 'fps'):
         super().__init__()
         self.grid_size = grid_size
+        self.perc_points = 0.5
         self.device = device
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
         self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
                                         torch.nn.BatchNorm1d(out_channels),
                                         torch.nn.ReLU())
+        self.subsampling = subsampling
+        
 
     def forward(self, data):
         # linear projectionlong
         data_up = tg.data.Data(x=self.down(data.x.float()),
                                batch=data.batch.long(), pos=data.pos, y=data.y.long(), edge_index=data.edge_index)
         # pooling and maxpool
-        max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
-        del max_pooled_data.edge_index
-        data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
+        if self.subsampling == 'grid':
+            max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
+            del max_pooled_data.edge_index
+            data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
+        if self.subsampling == 'fps':
+            # farthest point sampling
+            index = tgnn.pool.fps(data.pos, ratio=self.perc_points, batch=data.batch)
+            index = index.sort().values
+            # pooling
+            max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
+            max_pooled_data.x = max_pooled_data.x[index, :]
+            max_pooled_data.pos = max_pooled_data.pos[index]
+            max_pooled_data.batch = max_pooled_data.batch[index]
+            max_pooled_data.y = max_pooled_data.y[index]
+            data_out = max_pooled_data
         return data_out.to(self.device)
-
 
 class PointTrans_Layer_up(nn.Module):
     def __init__(self, in_channels=3, out_channels=3, device='cpu', k_up=8) -> None:
@@ -172,7 +186,8 @@ class Enc_block(nn.Module):
         self.device = config['device']
         self.downlayer = PointTrans_Layer_down(in_channels=in_channels,
                                                out_channels=out_channels,
-                                               grid_size=grid_size)
+                                               grid_size=grid_size,
+                                               subsampling=config['subsampling'])
 
         self.pconv = PointTrans_Layer(in_channels=out_channels,
                                       out_channels=out_channels)
@@ -196,7 +211,7 @@ class Dec_block(nn.Module):
             in_channels=in_channels, out_channels=out_channels)
         self.pconv = PointTrans_Layer(
             in_channels=out_channels, out_channels=out_channels)
-        self.g_graph = generate_graph(in_channels=in_channels,
+        self.g_graph = generate_graph(in_channels=out_channels,
                                         device=self.config['device'],
                                         k=self.config['k_up'])
 

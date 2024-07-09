@@ -36,8 +36,9 @@ val_loader = tg.loader.DataLoader(dataset_train,
 # Model setup
 GNN_model = Lightning_GNN(config=config)
 
-data = next(iter(train_loader))
-GNN_model(data)
+#data = next(iter(train_loader))
+#GNN_model(data)
+
 
 GNN_model.to(config['device'])
 
@@ -73,9 +74,7 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
                      default_root_dir=output_dir,
                      accelerator=config['device'],
                      logger=wandb_logger,
-                     log_every_n_steps=1,
-                     limit_val_batches=2,
-                     limit_train_batches=2)
+                     log_every_n_steps=1)
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,
