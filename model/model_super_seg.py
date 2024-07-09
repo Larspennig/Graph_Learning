@@ -25,14 +25,21 @@ class generate_graph(nn.Module):
         # initalize graph
         data.to('cpu')
         data = tg.transforms.KNNGraph(k=16)(data)
-        edges_large = tg.transforms.KNNGraph(k=180)(data).edge_index.to(self.device)
+        edges_large = tg.transforms.KNNGraph(k=127)(data).edge_index.to(self.device)
+
+        # hacky way to circumvent error of having more than k neighbors
+        if edges_large.shape[1] != data.x.shape[0]*127:
+            data.pos = data.pos + torch.rand_like(data.pos)*0.0001
+            edges_large = tg.transforms.KNNGraph(k=127)(data).edge_index.to(self.device)
+            print('repeated points')
+
         # add edge_index with kNN in feature space
         data.to(self.device)
 
         # better solution? to make neighbors deterministic?
         emb_g = self.MLP(data.x)
         rand_scores = torch.rand_like(emb_g) * 0.0001
-        emb_g = emb_g + rand_scores.to(self.device)
+        emb_g = emb_g.to(self.device) + rand_scores.to(self.device)
         data.soft_index_i = torch.zeros((2, 0), dtype=torch.long).to(self.device)
         data.soft_index_v = torch.zeros((2, 0), dtype=torch.float).to(self.device)
 
@@ -42,7 +49,8 @@ class generate_graph(nn.Module):
         p = torch.exp(-self.t*dist**2)
 
         # reshape per node
-        p = p.reshape(-1, 128)
+    
+        p = p.reshape(-1, 127)
 
         # sample k from neighbors with gumbel loss
         gumbel_noise = - \
@@ -52,7 +60,7 @@ class generate_graph(nn.Module):
         top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=1)
         top_edges_v = torch.softmax(top_edges_v, dim=1)
 
-        top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None].to(self.device)*128
+        top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None].to(self.device)*127
         top_edges_i = top_edges_i.flatten()
 
         top_edges_v = top_edges_v.flatten()

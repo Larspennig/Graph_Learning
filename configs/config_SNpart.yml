@@ -1,5 +1,7 @@
 # Configuration for Graph Learning
 
+project_name: 'PointTransformer_Segmentation'
+
 # Device
 device: 'cuda'
 
@@ -9,7 +11,7 @@ model: 'super'
 subsampling: 'fps' # or grid
 
 # Training parameters
-batch_size: 2
+batch_size: 4
 epochs: 200
 learning_rate: 0.05
 max_epochs: 200

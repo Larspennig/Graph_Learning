@@ -56,7 +56,7 @@ checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
 # logger = CSVLogger(save_dir=output_dir,flush_logs_every_n_steps=10)
 
-wandb_logger = WandbLogger(project='PointTransformer_Segmentation',)
+wandb_logger = WandbLogger(project=config['project_name'],)
 wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
 wandb_logger.experiment.config['k_down'] = 16
 
