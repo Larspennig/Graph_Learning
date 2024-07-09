@@ -1,13 +1,17 @@
 from lightning import LightningModule
 import torch
 from model.model_seg import TransformerGNN
+from model.model_super_seg import TransformerGNN_super
 
 
 class Lightning_GNN(LightningModule):
     def __init__(self, config):
         self.dev = config['device']
         super().__init__()
-        self.model = TransformerGNN(config=config)
+        if config['model'] == 'standard':
+            self.model = TransformerGNN(config=config)
+        elif config['model'] == 'super':
+            self.model = TransformerGNN_super(config=config)
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.config = config
 

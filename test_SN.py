@@ -13,7 +13,7 @@ import torch
 with open('configs/config_SNpart.yml', 'r') as f:
     config = yaml.safe_load(f)
 
-config['batch_size'] = 10
+config['batch_size'] = 20
 
 # Data setup
 dataset_test = SNpart_Dataset(root=config['root'],
@@ -21,7 +21,8 @@ dataset_test = SNpart_Dataset(root=config['root'],
 
 test_loader = tg.loader.DataLoader(dataset_test,
                                   batch_size=config['batch_size'],
-                                  num_workers=2)
+                                  num_workers=2,
+                                  shuffle = True)
 
 # Model setup
 GNN_model = Lightning_GNN(config=config)

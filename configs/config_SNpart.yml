@@ -5,9 +5,11 @@ device: 'cpu'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
+model: 'standard'
+subsampling: 'grid' # or grid
 
 # Training parameters
-batch_size: 20
+batch_size: 2
 epochs: 200
 learning_rate: 0.05
 max_epochs: 200
@@ -17,12 +19,11 @@ root: 'data/ShapeNet_Part/'
 sample_size : 0.3  # only Stanford3d
 
 # Model parameters
-model: 'standard'
 num_classes : 50
-grid_size : [0.04,0.08,0.12,0.24]
+grid_size : [0.06,0.08,0.12,0.24]
 k_up : 16
 k_down : 16
 
-# scheduler
+# scheduler not implemented yet
 step_size: 20
 

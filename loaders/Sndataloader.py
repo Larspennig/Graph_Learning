@@ -59,12 +59,7 @@ class SNpart_Dataset(Dataset):
                 cloud = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(data[i,:,:]))
                 cloud.estimate_normals()
                 normals = torch.Tensor(np.array(cloud.normals))
-
                 pos = torch.Tensor(np.array(data[i,:,:]))
-                # normalize pos
-                pos = pos - pos.mean(dim=0, keepdim=True)
-                pos = pos / torch.norm(pos, dim=0).max()
-
                 pc = Data(x=normals, pos = pos, y=torch.Tensor(pid[i,:]))
                 obj = torch.Tensor(labels[i])
                 torch.save((pc,obj), self.processed_dir+'/'+'part_'+str(idx).zfill(5)+'.pt')
@@ -99,6 +94,6 @@ class SNpart_Dataset(Dataset):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
         
-        data = self.transform_1(data)
-        data = self.transform_2(data)
+        #data = self.transform_1(data)
+        #data = self.transform_2(data)
         return data[0]

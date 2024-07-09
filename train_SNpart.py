@@ -36,8 +36,8 @@ val_loader = tg.loader.DataLoader(dataset_train,
 # Model setup
 GNN_model = Lightning_GNN(config=config)
 
-#data = next(iter(train_loader))
-#GNN_model(data)
+data = next(iter(train_loader))
+GNN_model(data)
 
 GNN_model.to(config['device'])
 
