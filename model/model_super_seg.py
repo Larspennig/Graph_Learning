@@ -139,10 +139,10 @@ class PointTrans_Layer_down(nn.Module):
             data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
         if self.subsampling == 'fps':
             # farthest point sampling
-            index = tgnn.pool.fps(data.pos, ratio=self.perc_points, batch=data.batch)
+            index = tgnn.pool.fps(data.pos.to(self.device), ratio=self.perc_points, batch=data.batch.to(self.device))
             index = index.sort().values
             # pooling
-            max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
+            max_pooled_data = tgnn.max_pool_neighbor_x(data_up.to(self.device))
             max_pooled_data.x = max_pooled_data.x[index, :]
             max_pooled_data.pos = max_pooled_data.pos[index]
             max_pooled_data.batch = max_pooled_data.batch[index]

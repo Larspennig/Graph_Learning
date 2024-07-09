@@ -9,7 +9,7 @@ model: 'super'
 subsampling: 'fps' # or grid
 
 # Training parameters
-batch_size: 10
+batch_size: 2
 epochs: 200
 learning_rate: 0.05
 max_epochs: 200
