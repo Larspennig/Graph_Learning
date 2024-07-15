@@ -2,6 +2,7 @@ from lightning import LightningModule
 import torch
 from model.model_seg import TransformerGNN
 from model.model_super_seg import TransformerGNN_super
+from model.model_seg_double_knn import TransformerGNN_double
 
 
 class Lightning_GNN(LightningModule):
@@ -12,6 +13,8 @@ class Lightning_GNN(LightningModule):
             self.model = TransformerGNN(config=config)
         elif config['model'] == 'super':
             self.model = TransformerGNN_super(config=config)
+        elif config['model'] == 'double':
+            self.model = TransformerGNN_double(config=config)
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.config = config
 

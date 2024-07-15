@@ -4,87 +4,15 @@ import os
 import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
-from model.point_transformer_conv_super import PointTransformerConv_Super as PointTransformerConv
+from torch_geometric.utils import add_self_loops, scatter
 # from create_graph import create_graph
 
 
-
-class generate_graph(nn.Module):
-    def __init__(self, in_channels, device, k=16):
-        super().__init__()
-        self.k = k
-        self.device = device
-        self.MLP = tgnn.models.MLP(
-            in_channels=in_channels,
-            out_channels=10,
-            hidden_channels=in_channels,
-            num_layers=2)
-        self.t = nn.Parameter(torch.tensor([1.0], requires_grad=False))
-
-    def forward(self, data):
-        # initalize graph
-        data.to('cpu')
-        data = tg.transforms.KNNGraph(k=16)(data)
-        batch_size = data.batch.unique().shape[0]
-        k_large = min(127, data.x.shape[0]/batch_size-1)
-
-        edges_large = tg.transforms.KNNGraph(k=k_large)(data).edge_index.to(self.device)
-
-        # hacky way to circumvent error of having more than k neighbors
-        while edges_large.shape[1] != data.x.shape[0]*k_large:
-            data.pos = data.pos + torch.rand_like(data.pos)*0.001
-            edges_large = tg.transforms.KNNGraph(k=k_large)(data).edge_index.to(self.device)
-            print('repeated points')
-
-        # add edge_index with kNN in feature space
-        data.to(self.device)
-
-        # better solution? to make neighbors deterministic?
-        emb_g = self.MLP(data.x)
-        rand_scores = torch.rand_like(emb_g) * 0.0001
-        emb_g = emb_g.to(self.device) + rand_scores.to(self.device)
-        data.soft_index_i = torch.zeros((2, 0), dtype=torch.long).to(self.device)
-        data.soft_index_v = torch.zeros((2, 0), dtype=torch.float).to(self.device)
-
-        dist = torch.norm(emb_g[edges_large[0]] - emb_g[edges_large[1]], dim = 1)
-
-        # calculate connection probability
-        p = torch.exp(-self.t*dist**2)
-
-        # reshape per node
-    
-        p = p.reshape(-1, k_large)
-
-        # sample k from neighbors with gumbel loss
-        gumbel_noise = - \
-            torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
-        noisy_logits = torch.log(p + 1e-20) + gumbel_noise.to(self.device)
-
-        top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=1)
-        top_edges_v = torch.softmax(top_edges_v, dim=1)
-
-        top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None].to(self.device)*k_large
-        top_edges_i = top_edges_i.flatten()
-
-        top_edges_v = top_edges_v.flatten()
-
-        edges_sparse = edges_large[:,top_edges_i]
-        edges_sparse_v = torch.stack([top_edges_v, edges_sparse[1,:]], dim=0)
-
-        data.soft_index_i = edges_sparse
-        data.soft_index_v = edges_sparse_v
-
-        data.edge_index = torch.cat(
-            [data.soft_index_i, data.edge_index], dim=1)
-        # TO DO: remove equal edges from soft index and hard index
-        return data
-
-
-def generate_knn_graph(data, device='cpu', k=16):
+def generate_graph(data, device='cpu', k=16):
     # initalize graph
     data.to('cpu')
     data = tg.transforms.KNNGraph(k=k)(data)
-
+    data.edge_index = torch.cat([data.edge_index,tg.nn.knn_graph(data.x, k=k, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)], dim=1)
     return data.to(device)
 
 
@@ -143,25 +71,24 @@ class PointTrans_Layer_down(nn.Module):
         # linear projectionlong
         data_up = tg.data.Data(x=self.down(data.x.float()),
                                batch=data.batch.long(), pos=data.pos, y=data.y.long(), edge_index=data.edge_index)
-        
         # pooling and maxpool
         if self.subsampling == 'grid':
             max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
             del max_pooled_data.edge_index
             data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
-
         if self.subsampling == 'fps':
             # farthest point sampling
-            index = tgnn.pool.fps(data.pos.to(self.device), ratio=self.perc_points, batch=data.batch.to(self.device))
+            index = tgnn.pool.fps(data.pos, ratio=self.perc_points, batch=data.batch)
             index = index.sort().values
             # pooling
-            max_pooled_data = tgnn.max_pool_neighbor_x(data_up.to(self.device))
+            max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
             max_pooled_data.x = max_pooled_data.x[index, :]
             max_pooled_data.pos = max_pooled_data.pos[index]
             max_pooled_data.batch = max_pooled_data.batch[index]
             max_pooled_data.y = max_pooled_data.y[index]
             data_out = max_pooled_data
         return data_out.to(self.device)
+
 
 class PointTrans_Layer_up(nn.Module):
     def __init__(self, in_channels=3, out_channels=3, device='cpu', k_up=8) -> None:
@@ -200,18 +127,14 @@ class Enc_block(nn.Module):
         self.downlayer = PointTrans_Layer_down(in_channels=in_channels,
                                                out_channels=out_channels,
                                                grid_size=grid_size,
-                                               subsampling=config['subsampling'])
+                                               subsampling = config['subsampling'])
 
         self.pconv = PointTrans_Layer(in_channels=out_channels,
                                       out_channels=out_channels)
-        
-        self.g_graph = generate_graph(in_channels=out_channels,
-                                      device=self.device,
-                                      k=self.k_down)
 
     def forward(self, data):
         x_1 = self.downlayer(data)
-        x_1 = self.g_graph(x_1)
+        x_1 = generate_graph(x_1, device=self.device, k=self.k_down)
         x_2 = self.pconv(x_1)
         return x_2
 
@@ -224,18 +147,15 @@ class Dec_block(nn.Module):
             in_channels=in_channels, out_channels=out_channels)
         self.pconv = PointTrans_Layer(
             in_channels=out_channels, out_channels=out_channels)
-        self.g_graph = generate_graph(in_channels=out_channels,
-                                        device=self.config['device'],
-                                        k=self.config['k_up'])
 
     def forward(self, data_1, data_2):
         x_1 = self.uplayer(data_1, data_2)
-        x_1 = self.g_graph(x_1)
+        x_1 = generate_graph(x_1, device=self.config['device'], k=self.config['k_up'])
         x_2 = self.pconv(x_1)
         return x_2
 
 
-class TransformerGNN_super(nn.Module):
+class TransformerGNN_double(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -297,3 +217,4 @@ class TransformerGNN_super(nn.Module):
         # output
         x_10 = self.output_head(x_10.x.float())
         return x_10
+

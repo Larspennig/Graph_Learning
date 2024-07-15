@@ -26,7 +26,7 @@ test_loader = tg.loader.DataLoader(dataset_test,
 
 # Model setup
 GNN_model = Lightning_GNN(config=config)
-GNN_model.load_state_dict(torch.load('/home/lars/SN_outputs/output_SN_standard/2024-07-03_19.53.29/epoch=41-train_loss=0.22.ckpt')['state_dict'])
+GNN_model.load_state_dict(torch.load('/home/lars/output_SN/output_SN_standard/2024-07-03_19.53.29/epoch=60-train_loss=0.22.ckpt')['state_dict'])
 GNN_model.to('cpu')
 
 # Test
