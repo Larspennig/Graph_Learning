@@ -10,7 +10,7 @@ import os
 import wandb
 import torch
 
-with open('configs/config_SNpart.yml', 'r') as f:
+with open('/home/lars/output_SN_super/Graph_Learning/configs/config_SNpart.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 config['batch_size'] = 20
@@ -26,7 +26,7 @@ test_loader = tg.loader.DataLoader(dataset_test,
 
 # Model setup
 GNN_model = Lightning_GNN(config=config)
-GNN_model.load_state_dict(torch.load('/home/lars/output_SN/output_SN_standard/2024-07-03_19.53.29/epoch=60-train_loss=0.22.ckpt')['state_dict'])
+GNN_model.load_state_dict(torch.load('/home/lars/output_SN_super/Graph_Learning/model_checkpoints/2024-07-12_06.44.33/epoch=126-train_loss=0.82.ckpt')['state_dict'])
 GNN_model.to('cpu')
 
 # Test

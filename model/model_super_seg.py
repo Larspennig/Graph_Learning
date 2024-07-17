@@ -28,12 +28,12 @@ class generate_graph(nn.Module):
         batch_size = data.batch.unique().shape[0]
         k_large = min(127, data.x.shape[0]/batch_size-1)
 
-        edges_large = tg.transforms.KNNGraph(k=k_large)(data).edge_index.to(self.device)
+        edges_large = tg.nn.knn_graph(data.x, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
 
         # hacky way to circumvent error of having more than k neighbors
         while edges_large.shape[1] != data.x.shape[0]*k_large:
             data.pos = data.pos + torch.rand_like(data.pos)*0.001
-            edges_large = tg.transforms.KNNGraph(k=k_large)(data).edge_index.to(self.device)
+            edges_large = tg.nn.knn_graph(data.x, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
             print('repeated points')
 
         # add edge_index with kNN in feature space
@@ -52,7 +52,6 @@ class generate_graph(nn.Module):
         p = torch.exp(-self.t*dist**2)
 
         # reshape per node
-    
         p = p.reshape(-1, k_large)
 
         # sample k from neighbors with gumbel loss
