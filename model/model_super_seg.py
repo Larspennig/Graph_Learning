@@ -38,6 +38,7 @@ class generate_graph(nn.Module):
 
         # add edge_index with kNN in feature space
         data.to(self.device)
+        edges_large.to(self.device)
 
         # better solution? to make neighbors deterministic?
         emb_g = self.MLP(data.x)
