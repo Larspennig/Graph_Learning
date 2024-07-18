@@ -64,7 +64,7 @@ class generate_graph(nn.Module):
         top_edges_v = torch.softmax(top_edges_v, dim=1)
 
         top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None].to(self.device)*k_large
-        top_edges_i = top_edges_i.flatten()
+        top_edges_i = top_edges_i.flatten().to(self.device)
 
         top_edges_v = top_edges_v.flatten()
 
