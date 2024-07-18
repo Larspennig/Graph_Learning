@@ -16,7 +16,7 @@ class generate_graph(nn.Module):
         self.device = device
         self.MLP = tgnn.models.MLP(
             in_channels=in_channels,
-            out_channels=10,
+            out_channels=20,
             hidden_channels=in_channels,
             num_layers=2)
         self.t = nn.Parameter(torch.tensor([1.0], requires_grad=False))
@@ -37,8 +37,8 @@ class generate_graph(nn.Module):
             print('repeated points')
 
         # add edge_index with kNN in feature space
-        data.to(self.device)
-        edges_large.to(self.device)
+        data = data.to(self.device)
+        edges_large = edges_large.to(self.device)
 
         # better solution? to make neighbors deterministic?
         emb_g = self.MLP(data.x)
@@ -64,7 +64,7 @@ class generate_graph(nn.Module):
         top_edges_v = torch.softmax(top_edges_v, dim=1)
 
         top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None].to(self.device)*k_large
-        top_edges_i = top_edges_i.flatten().to(self.device)
+        top_edges_i = top_edges_i.flatten()
 
         top_edges_v = top_edges_v.flatten()
 
