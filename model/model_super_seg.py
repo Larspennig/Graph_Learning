@@ -32,7 +32,7 @@ class generate_graph(nn.Module):
 
         # hacky way to circumvent error of having more than k neighbors
         while edges_large.shape[1] != data.x.shape[0]*k_large:
-            data.pos = data.pos + torch.rand_like(data.pos)*0.001
+            data.x = data.x + torch.rand_like(data.x)*0.001
             edges_large = tg.nn.knn_graph(data.x, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
             print('repeated points')
 

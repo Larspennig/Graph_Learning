@@ -11,13 +11,13 @@ model: 'super'
 subsampling: 'fps' # or grid 
 
 # Training parameters
-batch_size: 10
+batch_size: 2
 epochs: 200
 learning_rate: 0.05
 max_epochs: 200
 
 # Data parameters
-root: '../data/ShapeNet_Part/'
+root: 'data/ShapeNet_Part/'
 sample_size : 0.3  # only Stanford3d
 
 # Model parameters
