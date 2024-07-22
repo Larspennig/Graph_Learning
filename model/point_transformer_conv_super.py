@@ -17,6 +17,9 @@ from torch_geometric.utils import add_self_loops, remove_self_loops, softmax
 
 
 class StraightThrough(torch.autograd.Function):
+    """
+        A custom autograd function that implements the Straight-Through Estimator (STE).
+    """
     @staticmethod
     def forward(ctx, alpha, factor):
         ctx.save_for_backward(alpha, factor) 
@@ -30,7 +33,10 @@ class StraightThrough(torch.autograd.Function):
 
 
 class PointTransformerConv_Super(MessagePassing):
-    r"""The Point Transformer layer from the `"Point Transformer"
+    r"""
+    Class modified to include graph learning functionality.
+
+    The Point Transformer layer from the `"Point Transformer"
     <https://arxiv.org/abs/2012.09164>`_ paper.
 
     .. math::

@@ -1,6 +1,6 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation'
+project_name: 'PointTransformer_Segmentation_SN'
 
 # Device
 device: 'cuda'
@@ -8,16 +8,16 @@ device: 'cuda'
 # Model setup
 checkpoints: 'model_checkpoints/'
 model: 'super'
-subsampling: 'grid' # or grid 
+subsampling: 'fps' # fps or grid 
 
 # Training parameters
-batch_size: 2
+batch_size: 10
 epochs: 200
 learning_rate: 0.05
 max_epochs: 200
 
 # Data parameters
-root: 'data/ShapeNet_Part/'
+root: '../data/ShapeNet_Part/'
 sample_size : 0.3  # only Stanford3d
 
 # Model parameters

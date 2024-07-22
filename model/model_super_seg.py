@@ -27,12 +27,11 @@ class generate_graph(nn.Module):
         data = tg.transforms.KNNGraph(k=16)(data)
         batch_size = data.batch.unique().shape[0]
         k_large = min(99, data.x.shape[0]/batch_size-1)
-
         edges_large = tg.nn.knn_graph(emb_g, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
 
-        # hacky way to circumvent error of having more than k neighbors
+        # circumvent error of having more than k neighbors if necessary
         while edges_large.shape[1] != data.x.shape[0]*k_large:
-            data.x = data.x + torch.rand_like(data.x)*0.001
+            emb_g = emb_g + torch.rand_like(emb_g)*0.001
             edges_large = tg.nn.knn_graph(emb_g, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
             print('repeated points')
 
