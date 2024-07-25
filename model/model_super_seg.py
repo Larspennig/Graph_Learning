@@ -53,9 +53,9 @@ class generate_graph(nn.Module):
         p = p.reshape(-1, k_large)
 
         # sample k from neighbors with gumbel loss
-        gumbel_noise = - \
-            torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
-        noisy_logits = torch.log(p + 1e-20) + gumbel_noise.to(self.device)
+        #gumbel_noise = - \
+        #    torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
+        noisy_logits = torch.log(p + 1e-20)# + gumbel_noise.to(self.device)
 
         top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=1)
         top_edges_v = torch.softmax(top_edges_v, dim=1)

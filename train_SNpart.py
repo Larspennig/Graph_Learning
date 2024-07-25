@@ -62,7 +62,7 @@ wandb_logger.experiment.config['k_down'] = 16
 
 
 checkpoint_callback = ModelCheckpoint(save_top_k=3,
-                                      monitor='train_acc',
+                                      monitor='val_acc',
                                       mode='max',
                                       dirpath=output_dir,
                                       filename=checkpoint_filename)
@@ -78,4 +78,5 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,
-            val_dataloaders=val_loader)
+            val_dataloaders=val_loader,
+            ckpt_path="/app/Graph_Learning/model_checkpoints/2024-07-22_15.00.27/epoch=46-train_loss=0.83.ckpt")

@@ -28,7 +28,7 @@ class StraightThrough(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         alpha, factor = ctx.saved_tensors
-        return grad_output, (alpha*grad_output).sum(dim=1) 
+        return grad_output, None#(alpha*grad_output).sum(dim=1) 
 
 
 
