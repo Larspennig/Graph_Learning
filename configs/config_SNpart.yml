@@ -7,7 +7,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'super'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
