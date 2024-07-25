@@ -1,8 +1,11 @@
-torch
-torchvision
-torch_geometric
-torch_cluster
 lightning
-pyyml
-scikit-learn
+torch_geometric
+pyg_lib @ https://data.pyg.org/whl/torch-2.3.0+cu121.html
+torch_scatter @ https://data.pyg.org/whl/torch-2.3.0+cu121.html
+torch_sparse @ https://data.pyg.org/whl/torch-2.3.0+cu121.html
+torch_cluster @ https://data.pyg.org/whl/torch-2.3.0+cu121.html
+torch_spline_conv @ https://data.pyg.org/whl/torch-2.3.0+cu121.html
+pyyaml
 wandb
+open3d
+h5py
