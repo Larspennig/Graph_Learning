@@ -78,5 +78,4 @@ trainer = pl.Trainer(max_epochs=config['max_epochs'],
 
 trainer.fit(GNN_model,
             train_dataloaders=train_loader,
-            val_dataloaders=val_loader,
-            ckpt_path="/app/Graph_Learning/model_checkpoints/2024-07-22_15.00.27/epoch=46-train_loss=0.83.ckpt")
+            val_dataloaders=val_loader)
