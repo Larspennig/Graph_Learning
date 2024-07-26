@@ -48,7 +48,7 @@ class generate_graph(nn.Module):
         dist = torch.norm(emb_g[edges_large[0]] - emb_g[edges_large[1]], dim = 1)
 
         # calculate connection probability
-        p = torch.exp(-self.t*dist**2)
+        p = torch.exp(-self.t*dist)
 
         edges_sparse_v = torch.stack([p, edges_large[1,:]], dim=0)
         data.soft_index_i = edges_large
