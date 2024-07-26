@@ -23,8 +23,6 @@ class generate_graph(nn.Module):
     def forward(self, data):
         # initalize graph
         emb_g = self.MLP(data.x)
-        
-        data = tg.transforms.KNNGraph(k=16)(data)
         edges_large = tg.nn.knn_graph(emb_g, k=16, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
         
         # circumvent error of having more than k neighbors if necessary
@@ -32,10 +30,7 @@ class generate_graph(nn.Module):
             emb_g = emb_g + torch.rand_like(emb_g)*0.001
             edges_large = tg.nn.knn_graph(emb_g, k=16, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
             print('repeated points')
-
-        # add edge_index with kNN in feature space
-        edges_large = edges_large
-
+        '''
         # better solution? to make neighbors deterministic?
         rand_scores = torch.rand_like(emb_g) * 0.0001
         emb_g = emb_g + rand_scores.to(self.device)
@@ -52,7 +47,8 @@ class generate_graph(nn.Module):
         data.edge_index = torch.cat(
             [data.soft_index_i, data.edge_index], dim=1)
         # TO DO: remove equal edges from soft index and hard index
-    
+        '''
+        data.edge_index = edges_large
         return data
 
 
@@ -80,6 +76,42 @@ class PointTrans_Layer(nn.Module):
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=1)
+
+        self.conv = tgnn.PointTransformerConv(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            pos_nn=self.pos,
+            attn_nn=self.attn)
+
+    def forward(self, data):
+        # knn in space
+        data = generate_knn_graph(data)
+        out = self.conv(x=data.x.float(),
+                        pos=data.pos.float(),
+                        edge_index=data.edge_index) 
+        out = self.linear_up(out)
+        # create skip connection
+        data.x = out + data.x
+        return data
+
+
+class feat_PointTrans_Layer(nn.Module):
+    def __init__(self, in_channels=3, out_channels=3, use_super=False):
+        super().__init__()
+        self.use_super = use_super
+        self.linear_up = torch.nn.Linear(
+            in_features=out_channels, out_features=out_channels)
+
+        self.attn = tgnn.models.MLP(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            hidden_channels=out_channels,
+            num_layers=2)
+        self.pos = tgnn.models.MLP(
+            in_channels=3,
+            out_channels=out_channels,
+            hidden_channels=out_channels,
+            num_layers=1)
         if use_super:
             self.conv = PointTransformerConv_Super(
                 in_channels=in_channels,
@@ -92,9 +124,15 @@ class PointTrans_Layer(nn.Module):
                 out_channels=out_channels,
                 pos_nn=self.pos,
                 attn_nn=self.attn)
+        
+        self.g_graph = generate_graph(in_channels=out_channels,
+                                device=self.device,
+                                k=self.k_down)
 
     def forward(self, data):
         # put create graph here
+        data = self.g_graph(data)
+
         if self.use_super:
             out = self.conv(x=data.x.float(),
                             pos=data.pos.float(),
@@ -192,14 +230,15 @@ class Enc_block(nn.Module):
         self.pconv = PointTrans_Layer(in_channels=out_channels,
                                       out_channels=out_channels)
         
-        self.g_graph = generate_graph(in_channels=out_channels,
-                                      device=self.device,
-                                      k=self.k_down)
+        self.g_pconv = feat_PointTrans_Layer(in_channels=out_channels,
+                                        out_channels=out_channels)
+    
 
     def forward(self, data):
         x_1 = self.downlayer(data)
-        x_1 = self.g_graph(x_1)
         x_2 = self.pconv(x_1)
+        x_3 = self.g_pconv(x_1)
+        x_2.x = x_2.x + x_3.x
         return x_2
 
 
@@ -211,14 +250,14 @@ class Dec_block(nn.Module):
             in_channels=in_channels, out_channels=out_channels)
         self.pconv = PointTrans_Layer(
             in_channels=out_channels, out_channels=out_channels)
-        self.g_graph = generate_graph(in_channels=out_channels,
-                                        device=self.config['device'],
-                                        k=self.config['k_up'])
+        self.g_pconv = feat_PointTrans_Layer(in_channels=out_channels,
+                                        out_channels=out_channels)
 
     def forward(self, data_1, data_2):
         x_1 = self.uplayer(data_1, data_2)
-        x_1 = self.g_graph(x_1)
         x_2 = self.pconv(x_1)
+        x_3 = self.g_pconv(x_1)
+        x_2.x = x_2.x + x_3.x
         return x_2
 
 
