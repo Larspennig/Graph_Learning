@@ -23,7 +23,7 @@ class StraightThrough(torch.autograd.Function):
     @staticmethod
     def forward(ctx, alpha, factor):
         ctx.save_for_backward(alpha, factor) 
-        return alpha
+        return alpha*factor[:,None]
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -174,7 +174,7 @@ class PointTransformerConv_Super(MessagePassing):
         if self.attn_nn is not None:
             alpha = self.attn_nn(alpha)
         factor = torch.cat([edge_index_soft_v[0, :], torch.ones(
-            edge_index.shape[1]-edge_index_soft_v.shape[1]).to('cpu')], dim=0)
+            edge_index.shape[1]-edge_index_soft_v.shape[1]).to('cuda')], dim=0)
         alpha = StraightThrough.apply(alpha, factor)
         #alpha = factor[:, None]*alpha
         alpha = softmax(alpha, index, ptr, size_i)

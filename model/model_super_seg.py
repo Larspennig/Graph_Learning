@@ -8,7 +8,6 @@ from model.point_transformer_conv_super import PointTransformerConv_Super
 # from create_graph import create_graph
 
 
-
 class generate_graph(nn.Module):
     def __init__(self, in_channels, device, k=16):
         super().__init__()
@@ -24,9 +23,10 @@ class generate_graph(nn.Module):
     def forward(self, data):
         # initalize graph
         emb_g = self.MLP(data.x)
+        
         data = tg.transforms.KNNGraph(k=16)(data)
         edges_large = tg.nn.knn_graph(emb_g, k=16, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
-
+        
         # circumvent error of having more than k neighbors if necessary
         while edges_large.shape[1] != data.x.shape[0]*16:
             emb_g = emb_g + torch.rand_like(emb_g)*0.001
@@ -45,15 +45,14 @@ class generate_graph(nn.Module):
         # calculate connection probability
         p = torch.exp(-self.t*dist**2)
 
-        edges_sparse = edges_large
         edges_sparse_v = torch.stack([p, edges_large[1,:]], dim=0)
-
-        data.soft_index_i = edges_sparse
-        data.soft_index_v = edges_sparse_v
+        data.soft_index_i = edges_large
+        data.soft_index_v = edges_sparse_v.float()
 
         data.edge_index = torch.cat(
             [data.soft_index_i, data.edge_index], dim=1)
         # TO DO: remove equal edges from soft index and hard index
+    
         return data
 
 
