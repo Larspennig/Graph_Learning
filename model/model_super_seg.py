@@ -19,20 +19,18 @@ class generate_graph(nn.Module):
             out_channels=20,
             hidden_channels=in_channels,
             num_layers=2)
-        self.t = nn.Parameter(torch.tensor([1.0], requires_grad=False))
+        self.t = nn.Parameter(torch.tensor([700.0], requires_grad=False))
 
     def forward(self, data):
         # initalize graph
         emb_g = self.MLP(data.x)
         data = tg.transforms.KNNGraph(k=16)(data)
-        batch_size = data.batch.unique().shape[0]
-        k_large = min(99, data.x.shape[0]/batch_size-1)
-        edges_large = tg.nn.knn_graph(emb_g, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
+        edges_large = tg.nn.knn_graph(emb_g, k=16, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
 
         # circumvent error of having more than k neighbors if necessary
-        while edges_large.shape[1] != data.x.shape[0]*k_large:
+        while edges_large.shape[1] != data.x.shape[0]*16:
             emb_g = emb_g + torch.rand_like(emb_g)*0.001
-            edges_large = tg.nn.knn_graph(emb_g, k=k_large, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
+            edges_large = tg.nn.knn_graph(emb_g, k=16, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)
             print('repeated points')
 
         # add edge_index with kNN in feature space
@@ -49,24 +47,11 @@ class generate_graph(nn.Module):
         # calculate connection probability
         p = torch.exp(-self.t*dist**2)
 
-        # reshape per node
-        p = p.reshape(-1, k_large)
-
-        # sample k from neighbors with gumbel loss
-        #gumbel_noise = - \
-        #    torch.log(-torch.log(torch.rand_like(p) + 1e-20) + 1e-20)
-        noisy_logits = torch.log(p + 1e-20)# + gumbel_noise.to(self.device)
-
-        top_edges_v, top_edges_i = torch.topk(noisy_logits, self.k, dim=1)
-        top_edges_v = torch.softmax(top_edges_v, dim=1)
-
-        top_edges_i = top_edges_i + torch.arange(0, top_edges_i.shape[0])[:,None].to(self.device)*k_large
-        top_edges_i = top_edges_i.flatten()
-
+        top_edges_v = p
         top_edges_v = top_edges_v.flatten()
 
-        edges_sparse = edges_large[:,top_edges_i]
-        edges_sparse_v = torch.stack([top_edges_v, edges_sparse[1,:]], dim=0)
+        edges_sparse = edges_large
+        edges_sparse_v = torch.stack([top_edges_v, edges_large[1,:]], dim=0)
 
         data.soft_index_i = edges_sparse
         data.soft_index_v = edges_sparse_v
