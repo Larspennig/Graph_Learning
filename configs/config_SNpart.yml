@@ -1,6 +1,6 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation'
+project_name: 'PointTransformer_Segmentation_SN'
 run_name: 'SN_part_fps_simple2'
 
 # Device
