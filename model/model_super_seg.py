@@ -126,8 +126,8 @@ class feat_PointTrans_Layer(nn.Module):
                 attn_nn=self.attn)
         
         self.g_graph = generate_graph(in_channels=out_channels,
-                                device=self.device,
-                                k=self.k_down)
+                                device='cuda',
+                                k = 16)
 
     def forward(self, data):
         # put create graph here
@@ -232,13 +232,15 @@ class Enc_block(nn.Module):
         
         self.g_pconv = feat_PointTrans_Layer(in_channels=out_channels,
                                         out_channels=out_channels)
+        self.alpha = torch.nn.Parameter(torch.tensor(0.5), requires_grad=True)
     
 
     def forward(self, data):
         x_1 = self.downlayer(data)
         x_2 = self.pconv(x_1)
         x_3 = self.g_pconv(x_1)
-        x_2.x = x_2.x + x_3.x
+        const_param = torch.sigmoid(self.alpha)
+        x_2.x = x_2.x * const_param+ (1-const_param) * x_3.x
         return x_2
 
 
@@ -252,12 +254,14 @@ class Dec_block(nn.Module):
             in_channels=out_channels, out_channels=out_channels)
         self.g_pconv = feat_PointTrans_Layer(in_channels=out_channels,
                                         out_channels=out_channels)
+        self.alpha = torch.nn.Parameter(torch.tensor(0.5), requires_grad=True)
 
     def forward(self, data_1, data_2):
         x_1 = self.uplayer(data_1, data_2)
         x_2 = self.pconv(x_1)
         x_3 = self.g_pconv(x_1)
-        x_2.x = x_2.x + x_3.x
+        const_param = torch.sigmoid(self.alpha)
+        x_2.x = x_2.x * const_param + (1-const_param)*x_3.x
         return x_2
 
 
