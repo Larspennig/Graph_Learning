@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_SN'
-run_name: 'SN_part_fps_simple2'
+run_name: 'SN_part_fps_simple2c'
 
 # Device
 device: 'cuda'
