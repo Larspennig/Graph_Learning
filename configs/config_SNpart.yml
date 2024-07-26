@@ -1,6 +1,6 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation_SN'
+project_name: 'PointTransformer_Segmentation'
 run_name: 'SN_part_fps_simple1'
 
 # Device
@@ -12,7 +12,7 @@ model: 'super'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
-batch_size: 30
+batch_size: 3
 epochs: 200
 learning_rate: 0.05
 max_epochs: 200

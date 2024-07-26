@@ -4,7 +4,7 @@ import os
 import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
-from model.point_transformer_conv_super import PointTransformerConv_Super as PointTransformerConv
+from model.point_transformer_conv_super import PointTransformerConv_Super
 # from create_graph import create_graph
 
 
@@ -39,19 +39,14 @@ class generate_graph(nn.Module):
         # better solution? to make neighbors deterministic?
         rand_scores = torch.rand_like(emb_g) * 0.0001
         emb_g = emb_g + rand_scores.to(self.device)
-        data.soft_index_i = torch.zeros((2, 0), dtype=torch.long).to(self.device)
-        data.soft_index_v = torch.zeros((2, 0), dtype=torch.float).to(self.device)
 
         dist = torch.norm(emb_g[edges_large[0]] - emb_g[edges_large[1]], dim = 1)
 
         # calculate connection probability
         p = torch.exp(-self.t*dist**2)
 
-        top_edges_v = p
-        top_edges_v = top_edges_v.flatten()
-
         edges_sparse = edges_large
-        edges_sparse_v = torch.stack([top_edges_v, edges_large[1,:]], dim=0)
+        edges_sparse_v = torch.stack([p, edges_large[1,:]], dim=0)
 
         data.soft_index_i = edges_sparse
         data.soft_index_v = edges_sparse_v
@@ -70,9 +65,9 @@ def generate_knn_graph(data, device='cuda', k=16):
 
 
 class PointTrans_Layer(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=3, use_super=True):
         super().__init__()
-
+        self.use_super = use_super
         self.linear_up = torch.nn.Linear(
             in_features=out_channels, out_features=out_channels)
 
@@ -86,21 +81,33 @@ class PointTrans_Layer(nn.Module):
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=1)
-
-        self.conv = tgnn.PointTransformerConv(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            pos_nn=self.pos,
-            attn_nn=self.attn)
+        if use_super:
+            self.conv = PointTransformerConv_Super(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                pos_nn=self.pos,
+                attn_nn=self.attn)
+        else: 
+            self.conv = tgnn.PointTransformerConv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                pos_nn=self.pos,
+                attn_nn=self.attn)
 
     def forward(self, data):
         # put create graph here
-
-        out = self.conv(x=data.x.float(),
-                        pos=data.pos.float(),
-                        edge_index=data.edge_index)
+        if self.use_super:
+            out = self.conv(x=data.x.float(),
+                            pos=data.pos.float(),
+                            edge_index=data.edge_index,
+                            edge_index_soft_idx= data.soft_index_i,
+                            edge_index_soft_v = data.soft_index_v)
+        else:
+            out = self.conv(x=data.x.float(),
+                            pos=data.pos.float(),
+                            edge_index=data.edge_index)
+            
         out = self.linear_up(out)
-
         # create skip connection
         data.x = out + data.x
         return data
@@ -221,7 +228,7 @@ class TransformerGNN_super(nn.Module):
         super().__init__()
         self.config = config
         self.linear = torch.nn.Linear(in_features=3, out_features=32)
-        self.pconv_in = PointTrans_Layer(in_channels=32, out_channels=32)
+        self.pconv_in = PointTrans_Layer(in_channels=32, out_channels=32, use_super=False)
 
         self.enc1 = Enc_block(in_channels=32, out_channels=64, grid_size=config['grid_size'][0], config=config)
         self.enc2 = Enc_block(in_channels=64, out_channels=128, grid_size=config['grid_size'][1], config=config)

@@ -1,6 +1,6 @@
 from lightning import LightningModule
 import torch
-from model.model import TransformerGNN
+from model.model_super import TransformerGNN
 
 
 class Lightning_GNN(LightningModule):
