@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_SN'
-run_name: 'SN_part_fps_simple2c'
+run_name: 'SN_part_fps_simple2_wo_penc'
 
 # Device
 device: 'cuda'
@@ -13,7 +13,7 @@ subsampling: 'fps' # fps or grid
 
 # Training parameters
 batch_size: 30
-epochs: 200
+epochs: 100
 learning_rate: 0.05
 max_epochs: 200
 
