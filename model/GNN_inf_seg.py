@@ -102,7 +102,7 @@ class Lightning_GNN(LightningModule):
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
         
         scheduler = {
-            'scheduler': ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=5),
+            'scheduler': ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=5, threshold=0.001),
             'monitor': 'val_loss', 
         }
         return {'optimizer': optimizer, 'lr_scheduler': scheduler}
