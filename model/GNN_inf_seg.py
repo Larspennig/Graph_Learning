@@ -3,6 +3,7 @@ import torch
 from model.model_seg import TransformerGNN
 from model.model_super_seg import TransformerGNN_super
 from model.model_seg_double_knn import TransformerGNN_double
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 
 class Lightning_GNN(LightningModule):
@@ -79,6 +80,16 @@ class Lightning_GNN(LightningModule):
         self.log('test_miou', MIoU, on_epoch=True, batch_size=self.config['batch_size'])
         
         return accr
-
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
+        
+        scheduler = {
+            'scheduler': ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=5),
+            'monitor': 'val_loss', 
+        }
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
+'''
     def configure_optimizers(self):
         return torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
+'''
