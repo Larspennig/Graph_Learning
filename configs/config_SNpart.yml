@@ -1,18 +1,19 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation'
+project_name: 'PointTransformer_Segmentation_SN'
+run_name: 'SN_part_double_batch_size=30'
 
 # Device
 device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'super'
+model: 'double'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
-batch_size: 20
-epochs: 2
+batch_size: 30
+epochs: 100
 learning_rate: 0.05
 max_epochs: 200
 

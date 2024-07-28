@@ -8,9 +8,8 @@ from torch_geometric.utils import add_self_loops, scatter
 # from create_graph import create_graph
 
 
-def generate_graph(data, device='cpu', k=16):
+def generate_graph(data, device='cuda', k=16):
     # initalize graph
-    data.to('cpu')
     data = tg.transforms.KNNGraph(k=k)(data)
     data.edge_index = torch.cat([data.edge_index,tg.nn.knn_graph(data.x, k=k, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)], dim=1)
     return data.to(device)
@@ -54,7 +53,7 @@ class PointTrans_Layer(nn.Module):
 
 
 class PointTrans_Layer_down(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cpu', subsampling = 'fps'):
+    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cuda', subsampling = 'fps'):
         super().__init__()
         self.grid_size = grid_size
         self.perc_points = 0.5
@@ -75,7 +74,7 @@ class PointTrans_Layer_down(nn.Module):
         if self.subsampling == 'grid':
             max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
             del max_pooled_data.edge_index
-            data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data.to('cpu'))
+            data_out = tg.transforms.GridSampling(self.grid_size)(max_pooled_data)
         if self.subsampling == 'fps':
             # farthest point sampling
             index = tgnn.pool.fps(data.pos, ratio=self.perc_points, batch=data.batch)
@@ -87,14 +86,14 @@ class PointTrans_Layer_down(nn.Module):
             max_pooled_data.batch = max_pooled_data.batch[index]
             max_pooled_data.y = max_pooled_data.y[index]
             data_out = max_pooled_data
-        return data_out.to(self.device)
+        return data_out
 
 
 class PointTrans_Layer_up(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, device='cpu', k_up=8) -> None:
+    def __init__(self, in_channels=3, out_channels=3, device='cuda', k_up=8) -> None:
         super().__init__()
         # replace with sequential batchnorm and relu
-        self.device= 'cpu'
+        self.device= 'cuda'
         self.k_up = k_up
         self.linear1 = torch.nn.Linear(
             in_features=in_channels, out_features=out_channels)
@@ -108,15 +107,15 @@ class PointTrans_Layer_up(nn.Module):
         data_2.x = self.linear2(data_2.x.float())
 
         # interpolation
-        x_int = tg.nn.unpool.knn_interpolate(x=data_1.x.to('cpu'),
-                                             pos_x=data_1.pos.to('cpu'),
-                                             pos_y=data_2.pos.to('cpu'),
-                                             batch_x=data_1.batch.to('cpu'),
-                                             batch_y=data_2.batch.to('cpu'),
+        x_int = tg.nn.unpool.knn_interpolate(x=data_1.x,
+                                             pos_x=data_1.pos,
+                                             pos_y=data_2.pos,
+                                             batch_x=data_1.batch,
+                                             batch_y=data_2.batch,
                                              k=self.k_up)
 
         data = tg.data.Data(x=x_int, pos=data_2.pos, batch=data_2.batch)
-        return data.to(self.device)
+        return data
 
 
 class Enc_block(nn.Module):
@@ -187,9 +186,8 @@ class TransformerGNN_double(nn.Module):
 
     def generate_graph(self, data):
         # initalize graph
-        data.to('cpu')
         data = tg.transforms.KNNGraph(k=self.config['k_down'])(data)
-        return data.to(self.config['device'])
+        return data
 
     def forward(self, data):
         # first_block
