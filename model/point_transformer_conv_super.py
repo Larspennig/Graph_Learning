@@ -34,7 +34,7 @@ class StraightThrough(torch.autograd.Function):
 
 class PointTransformerConv_Super(MessagePassing):
     r"""
-    Class modified to include graph learning functionality.
+    Class modified from PointTransformeConv to include graph learning functionality and to handle pos enc differently.
 
     The Point Transformer layer from the `"Point Transformer"
     <https://arxiv.org/abs/2012.09164>`_ paper.
