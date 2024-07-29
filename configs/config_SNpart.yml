@@ -13,9 +13,8 @@ subsampling: 'fps' # fps or grid
 
 # Training parameters
 batch_size: 30
-epochs: 100
 learning_rate: 0.05
-max_epochs: 200
+max_epochs: 100
 
 # Testing?
 test: True

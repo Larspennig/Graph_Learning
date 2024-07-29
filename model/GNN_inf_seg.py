@@ -70,7 +70,7 @@ class Lightning_GNN(LightningModule):
 
     def test_step(self, batch):
         inputs = batch
-        target = batch.y.type(torch.LongTensor)
+        target = batch.y.type(torch.LongTensor).to(self.dev)
         output = self(inputs)
         values = output.max(dim=1).indices
         # compute MIoU

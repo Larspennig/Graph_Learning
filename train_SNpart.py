@@ -10,6 +10,7 @@ import datetime
 import yaml
 import os
 import wandb
+import torch
 wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
 # wandb.login()
 
@@ -97,7 +98,7 @@ def main():
         test_loader = tg.loader.DataLoader(dataset_test,
                                     batch_size=config['batch_size'],
                                     num_workers=2,
-                                    shuffle = True)
+                                    shuffle = False)
         
         # retrieve the path to the best model checkpoint
         best_model_path = checkpoint_callback.best_model_path
@@ -105,23 +106,18 @@ def main():
             raise RuntimeError("Best model checkpoint not found. Ensure that the checkpoint callback is correctly configured.")
 
         # load the best model checkpoint
-        GNN_model = Lightning_GNN(config=config)
-        GNN_model.load_from_checkpoint(best_model_path)
+        GNN_model.load_state_dict(torch.load(best_model_path)['state_dict'])
 
         # initialize a new Trainer for testing
         trainer = pl.Trainer(
             accelerator=config['device'],
-            logger=wandb_logger
-        )
+            logger=wandb_logger)
         
         # Perform testing
         test_results = trainer.test(model=GNN_model, dataloaders=test_loader)
         print(f"Test Results: {test_results}")
 
-        # Optionally, save the test results to WandB or local files
         wandb_logger.experiment.log({"test_results": test_results})
-
-        trainer.test(test_dataloaders=test_loader)
 
 if __name__ == '__main__':
     main()
