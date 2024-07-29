@@ -176,13 +176,11 @@ class TransformerGNN(nn.Module):
         self.linear_out = torch.nn.Linear(in_features=32, out_features=13)
 
         self.output_head = torch.nn.Sequential(
-            torch.nn.Linear(in_features=32, out_features=50),
-            torch.nn.BatchNorm1d(num_features=50),
+            torch.nn.Linear(in_features=32, out_features=64),
+            #torch.nn.BatchNorm1d(num_features=50),
             torch.nn.ReLU(),
-            torch.nn.Linear(in_features=50, out_features=config['num_classes']),
-            torch.nn.BatchNorm1d(num_features=config['num_classes']),
-            torch.nn.ReLU())
-
+            torch.nn.Linear(in_features=64, out_features=config['num_classes']))
+        
     def generate_graph(self, data):
         # initalize graph
         data = tg.transforms.KNNGraph(k=self.config['k_down'])(data)
