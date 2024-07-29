@@ -177,7 +177,7 @@ class TransformerGNN(nn.Module):
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=32, out_features=64),
-            #torch.nn.BatchNorm1d(num_features=50),
+            torch.nn.BatchNorm1d(num_features=64),
             torch.nn.ReLU(),
             torch.nn.Linear(in_features=64, out_features=config['num_classes']))
         
