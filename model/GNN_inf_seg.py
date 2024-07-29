@@ -3,6 +3,7 @@ import torch
 from model.model_seg import TransformerGNN
 from model.model_super_seg import TransformerGNN_super
 from model.model_seg_double_knn import TransformerGNN_double
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class Lightning_GNN(LightningModule):
@@ -48,11 +49,28 @@ class Lightning_GNN(LightningModule):
         accr = torch.sum(values == target.to(self.dev))/len(target.to(self.dev))
         self.log('val_acc', accr, on_epoch=True,
                  batch_size=self.config['batch_size'])
+        
+        # Compute MIoU
+        num_classes = self.config['num_classes']
+        confusion_matrix = torch.zeros(num_classes, num_classes, dtype=torch.int64, device=self.device)
+
+        for t, p in zip(target.view(-1), values.view(-1)):
+            confusion_matrix[t.long(), p.long()] += 1
+
+        IoU = torch.zeros(num_classes, device=self.device)
+        for cls in range(num_classes):
+            TP = confusion_matrix[cls, cls]
+            FP = confusion_matrix[:, cls].sum() - TP
+            FN = confusion_matrix[cls, :].sum() - TP
+            IoU[cls] = TP / (TP + FP + FN + 1e-10)  # Avoid division by zero
+
+        MIoU = IoU[IoU.nonzero()].mean()
+        self.log('val_miou', MIoU, on_epoch=True, batch_size=self.config['batch_size'])
         return loss
 
     def test_step(self, batch):
         inputs = batch
-        target = batch.y.type(torch.LongTensor)
+        target = batch.y.type(torch.LongTensor).to(self.dev)
         output = self(inputs)
         values = output.max(dim=1).indices
         # compute MIoU
@@ -79,6 +97,16 @@ class Lightning_GNN(LightningModule):
         self.log('test_miou', MIoU, on_epoch=True, batch_size=self.config['batch_size'])
         
         return accr
-
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
+        
+        scheduler = {
+            'scheduler': ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=5, threshold=0.001),
+            'monitor': 'val_loss', 
+        }
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
+'''
     def configure_optimizers(self):
         return torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
+'''
