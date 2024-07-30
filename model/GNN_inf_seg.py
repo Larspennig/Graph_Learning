@@ -3,6 +3,7 @@ import torch
 from model.model_seg import TransformerGNN
 from model.model_super_seg import TransformerGNN_super
 from model.model_seg_double_knn import TransformerGNN_double
+from model.model_online import Net
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 
@@ -16,11 +17,14 @@ class Lightning_GNN(LightningModule):
             self.model = TransformerGNN_super(config=config)
         elif config['model'] == 'double':
             self.model = TransformerGNN_double(config=config)
+        elif config['model'] == 'online':
+            self.model = model = Net(3, 50, dim_model=[32, 64, 128, 256, 512],k=16)
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.config = config
 
     def forward(self, inputs):
-        return self.model(inputs)
+        return self.model(x=inputs.x, pos=inputs.pos, batch=inputs.batch)
+        #return self.model(inputs)
 
     def training_step(self, batch):
         inputs = batch

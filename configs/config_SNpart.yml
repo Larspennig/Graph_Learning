@@ -1,14 +1,14 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation'
-run_name: 'SN_part_fps_seg_new head'
+run_name: 'SN_part_online'
 
 # Device
 device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'online'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
