@@ -20,6 +20,8 @@ class PointTrans_Layer(nn.Module):
 
         self.linear_up = torch.nn.Linear(
             in_features=out_channels, out_features=out_channels)
+        self.linear_in = torch.nn.Linear(
+            in_features=in_channels, out_features=out_channels)
 
         self.attn = tgnn.models.MLP(
             in_channels=out_channels,
@@ -33,18 +35,18 @@ class PointTrans_Layer(nn.Module):
             num_layers=1)
 
         self.conv = tgnn.PointTransformerConv(
-            in_channels=in_channels,
+            in_channels=out_channels,
             out_channels=out_channels,
             pos_nn=self.pos,
             attn_nn=self.attn)
 
     def forward(self, data):
         # put create graph here
-
-        out = self.conv(x=data.x.float(),
+        data.x = self.linear_in(data.x).relu()
+        out = self.conv(x=data.x,
                         pos=data.pos.float(),
                         edge_index=data.edge_index)
-        out = self.linear_up(out)
+        out = self.linear_up(out).relu()
 
         # create skip connection
         data.x = out + data.x
@@ -89,7 +91,7 @@ class PointTrans_Layer_down(nn.Module):
 
 
 class PointTrans_Layer_up(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, device='cuda', k_up=8) -> None:
+    def __init__(self, in_channels=3, out_channels=3, device='cuda', k_up=3) -> None:
         super().__init__()
         # replace with sequential batchnorm and relu
         self.device= device 

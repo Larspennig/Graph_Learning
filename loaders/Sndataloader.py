@@ -8,6 +8,7 @@ import torch_geometric as tgg
 import yaml
 import h5py
 import open3d as o3d
+import torch_geometric.transforms as tgt
 
 
 class SNpart_Dataset(Dataset):
@@ -17,8 +18,10 @@ class SNpart_Dataset(Dataset):
             lines = f.readlines()
         self.item_dict = {line.split()[0]: int(line.split()[1]) for line in lines}
         
-        self.transform_1 = tg.transforms.RandomJitter(translate=0.0001)
-        self.transform_2 = tg.transforms.RandomRotate(180, axis=2)
+        self.transforms = tgt.Compose([tgt.RandomJitter(0.01),
+                                      tgt.RandomRotate(30, axis=0),
+                                      tgt.RandomRotate(30, axis=1),
+                                      tgt.RandomRotate(30, axis=2)])
 
         super().__init__(root, transform, pre_transform, pre_filter)
 
@@ -94,6 +97,5 @@ class SNpart_Dataset(Dataset):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
         
-        #data = self.transform_1(data)
-        #data = self.transform_2(data)
-        return data[0]
+        data = self.transforms(data[0])
+        return data

@@ -26,7 +26,7 @@ sample_size : 0.3  # only Stanford3d
 # Model parameters
 num_classes : 50
 grid_size : [0.03,0.06,0.10,0.20]
-k_up : 16
+k_up : 3
 k_down : 16
 
 # scheduler not implemented yet
