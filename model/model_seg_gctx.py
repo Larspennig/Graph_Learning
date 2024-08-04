@@ -1,3 +1,4 @@
+
 import torch_geometric as tg
 import numpy as np
 import os
@@ -7,11 +8,19 @@ import torch_geometric.nn as tgnn
 from torch_geometric.utils import add_self_loops, scatter
 # from create_graph import create_graph
 
-
 def generate_graph(data, device='cpu', k=16):
     # initalize graph
     data = tg.transforms.KNNGraph(k=k)(data)
     return data
+
+
+class global_tokens(nn.Module):
+    def __init__():
+        return None
+
+
+    def forward(self, data):
+        return None
 
 
 class PointTrans_Layer(nn.Module):
@@ -27,22 +36,18 @@ class PointTrans_Layer(nn.Module):
             in_channels=out_channels,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=2,
-            norm=None)
+            num_layers=2)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=1,
-            norm=None)
+            num_layers=1)
 
         self.conv = tgnn.PointTransformerConv(
             in_channels=out_channels,
             out_channels=out_channels,
             pos_nn=self.pos,
             attn_nn=self.attn)
-        
-        self.norm = tgnn.nn.LayerNorm(out_channels,mode='node')
 
     def forward(self, data):
         # put create graph here
@@ -54,7 +59,6 @@ class PointTrans_Layer(nn.Module):
 
         # create skip connection
         data.x = out + data.x
-        data.x = self.norm(data.x)
         return data
 
 
@@ -67,6 +71,7 @@ class PointTrans_Layer_down(nn.Module):
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
         self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
+                                        torch.nn.BatchNorm1d(out_channels),
                                         torch.nn.ReLU())
         self.subsampling = subsampling
         
@@ -97,6 +102,7 @@ class PointTrans_Layer_down(nn.Module):
 class PointTrans_Layer_up(nn.Module):
     def __init__(self, in_channels=3, out_channels=3, device='cuda', k_up=3) -> None:
         super().__init__()
+        # replace with sequential batchnorm and relu
         self.device= device 
         self.k_up = k_up
         self.linear1 = torch.nn.Linear(
@@ -182,19 +188,16 @@ class TransformerGNN(nn.Module):
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=32, out_features=64),
+            torch.nn.BatchNorm1d(num_features=64),
             torch.nn.ReLU(),
             torch.nn.Linear(in_features=64, out_features=config['num_classes']))
         
-    def generate_graph(self, data):
-        # initalize graph
-        data = tg.transforms.KNNGraph(k=self.config['k_down'])(data)
-        return data
 
     def forward(self, data):
         # first_block
         data.x = data.x.float()
         data.x = self.linear(data.x)
-        data = self.generate_graph(data)
+        data = generate_graph(data)
         x_1 = self.pconv_in(data)
 
         # encoder

@@ -17,7 +17,8 @@ class generate_graph(nn.Module):
             in_channels=in_channels,
             out_channels=20,
             hidden_channels=in_channels,
-            num_layers=2)
+            num_layers=1,
+            norm=None)
         self.t = nn.Parameter(torch.tensor([1.0], requires_grad=False))
 
     def forward(self, data):

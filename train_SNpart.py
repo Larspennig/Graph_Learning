@@ -73,7 +73,7 @@ def main():
     # Set up early stopping callback
     early_stopping_callback = EarlyStopping(
         monitor='val_acc', 
-        patience=8,
+        patience=10,
         mode='max',
         verbose=True
         )
