@@ -22,7 +22,7 @@ class PointTrans_Layer(nn.Module):
             in_features=out_channels, out_features=out_channels)
         self.linear_in = torch.nn.Linear(
             in_features=in_channels, out_features=out_channels)
-
+        
         self.attn = tgnn.models.MLP(
             in_channels=out_channels,
             out_channels=out_channels,
@@ -37,7 +37,7 @@ class PointTrans_Layer(nn.Module):
             num_layers=2,
             norm=None,
             plain_last=False)
-
+        
         self.conv = tgnn.PointTransformerConv(
             in_channels=out_channels,
             out_channels=out_channels,
