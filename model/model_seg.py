@@ -34,7 +34,7 @@ class PointTrans_Layer(nn.Module):
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=1,
+            num_layers=2,
             norm=None,
             plain_last=False)
 
