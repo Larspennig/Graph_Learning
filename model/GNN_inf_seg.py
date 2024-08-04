@@ -51,7 +51,7 @@ class Lightning_GNN(LightningModule):
         accr = torch.sum(values == target.to(self.dev))/len(target.to(self.dev))
         self.log('val_acc', accr, on_epoch=True,
                  batch_size=self.config['batch_size'])
-        
+        '''
         # Compute MIoU
         num_classes = self.config['num_classes']
         confusion_matrix = torch.zeros(num_classes, num_classes, dtype=torch.int64, device=self.device)
@@ -68,6 +68,7 @@ class Lightning_GNN(LightningModule):
 
         MIoU = IoU[IoU.nonzero()].mean()
         self.log('val_miou', MIoU, on_epoch=True, batch_size=self.config['batch_size'])
+        '''
         return loss
 
     def test_step(self, batch):
