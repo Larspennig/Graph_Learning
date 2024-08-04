@@ -18,7 +18,8 @@ class generate_graph(nn.Module):
             out_channels=20,
             hidden_channels=in_channels,
             num_layers=1,
-            norm=None)
+            norm=None,
+            plain_last=False)
         self.t = nn.Parameter(torch.tensor([1.0], requires_grad=False))
 
     def forward(self, data):
@@ -81,13 +82,15 @@ class PointTrans_Layer(nn.Module):
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=2,
-            norm=None)
+            norm=None,
+            plain_last=False)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=1,
-            norm=None)
+            norm=None,
+            plain_last=False)
         if use_super:
             self.conv = PointTransformerConv_Super(
                 in_channels=in_channels,

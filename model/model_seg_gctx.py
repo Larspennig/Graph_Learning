@@ -15,11 +15,31 @@ def generate_graph(data, device='cpu', k=16):
 
 
 class global_tokens(nn.Module):
-    def __init__():
+    def __init__(self,channels_in, channels_out):
+
+        self.lin_q = nn.Linear(channels_in, channels_out)
+        self.lin_k = nn.Linear(channels_in, channels_out)
+        self.lin_v = nn.Linear(channels_in, channels_out)
+        
+        self.pos = nn.Sequential(nn.Linear(3, channels_out),nn.ReLU())
+
         return None
 
 
+
     def forward(self, data):
+        perc = 10/data.x.shape[0]
+        indices = tgnn.pool.fps(data.pos, ratio=perc, batch=data.batch)
+        indices = indices.sort().values
+
+        fps_pos = data.pos[indices]
+        fps_x = data.x[indices]
+
+        x_q, x_k = self.lin_q(data.x), self.lin_k(data.x)
+        x_v = self.lin_v(fps_x)
+
+
+
         return None
 
 
@@ -36,18 +56,22 @@ class PointTrans_Layer(nn.Module):
             in_channels=out_channels,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=2)
+            num_layers=2
+            norm=None)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=1)
+            num_layers=1,
+            norm=None)
 
         self.conv = tgnn.PointTransformerConv(
             in_channels=out_channels,
             out_channels=out_channels,
             pos_nn=self.pos,
             attn_nn=self.attn)
+        
+        self.norm = tgnn.nn.LayerNorm(out_channels,mode='node')
 
     def forward(self, data):
         # put create graph here
