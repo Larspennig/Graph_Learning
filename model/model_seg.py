@@ -44,7 +44,7 @@ class PointTrans_Layer(nn.Module):
             pos_nn=self.pos,
             attn_nn=self.attn)
         
-        self.norm = tgnn.nn.LayerNorm(out_channels,mode='node')
+        self.norm = tgnn.norm.LayerNorm(out_channels,mode='node')
 
     def forward(self, data):
         # put create graph here
