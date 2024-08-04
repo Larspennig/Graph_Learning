@@ -54,7 +54,7 @@ def main():
 
     # Setup output dir
     run_time = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
-    output_dir = os.path.join(config['checkpoints'], run_time)
+    output_dir = os.path.join(config['checkpoints'], run_time+config['run_name'])
     checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
     # logger = CSVLogger(save_dir=output_dir,flush_logs_every_n_steps=10)
