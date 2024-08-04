@@ -38,6 +38,8 @@ class global_tokens(nn.Module):
         x_q, x_k = self.lin_q(data.x), self.lin_k(data.x)
         x_v = self.lin_v(fps_x)
 
+        
+
 
 
         return None
