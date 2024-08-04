@@ -167,12 +167,13 @@ class PointTransformerConv_Super(MessagePassing):
 
     def message(self, x_j: Tensor, pos_i: Tensor, pos_j: Tensor,
                 alpha_i: Tensor, alpha_j: Tensor, edge_index: Tensor, edge_index_soft_idx: Tensor, edge_index_soft_v: Tensor, index: Tensor,
-                ptr: OptTensor, size_i: Optional[int]) -> Tensor:
+                ptr: OptTensor, size_i: Optional[int], turn_off_pos_enc=False) -> Tensor:
 
         delta = self.pos_nn(pos_i - pos_j)
 
-        # mask positional encodings for sparse global edges 
-        delta[:edge_index_soft_v.shape[1],:] = torch.zeros_like(delta[:edge_index_soft_v.shape[1],:])
+        if turn_off_pos_enc:
+            # mask positional encodings for sparse global edges 
+            delta[:edge_index_soft_v.shape[1],:] = torch.zeros_like(delta[:edge_index_soft_v.shape[1],:])
 
         alpha = alpha_i - alpha_j + delta
         if self.attn_nn is not None:

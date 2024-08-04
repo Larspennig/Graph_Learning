@@ -227,7 +227,7 @@ class Dec_block(nn.Module):
         return x_2
 
 
-class TransformerGNN_super(nn.Module):
+class TransformerGNN_super_simple(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
