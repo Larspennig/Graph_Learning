@@ -54,7 +54,6 @@ class PointTrans_Layer(nn.Module):
 
         # create skip connection
         data.x = out + data.x
-        data.x = self.norm(data.x)
         return data
 
 
