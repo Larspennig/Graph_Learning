@@ -80,12 +80,14 @@ class PointTrans_Layer(nn.Module):
             in_channels=out_channels,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=2)
+            num_layers=2,
+            norm=None)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=1)
+            num_layers=1,
+            norm=None)
         if use_super:
             self.conv = PointTransformerConv_Super(
                 in_channels=in_channels,
@@ -98,6 +100,8 @@ class PointTrans_Layer(nn.Module):
                 out_channels=out_channels,
                 pos_nn=self.pos,
                 attn_nn=self.attn)
+            
+        self.norm = tgnn.norm.LayerNorm(out_channels, mode='node')
 
     def forward(self, data):
         # put create graph here
@@ -115,6 +119,7 @@ class PointTrans_Layer(nn.Module):
         out = self.linear_up(out)
         # create skip connection
         data.x = out + data.x
+        data.x = self.norm(data.x)
         return data
 
 
