@@ -105,7 +105,7 @@ class Lightning_GNN(LightningModule):
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
         
         scheduler = {
-            'scheduler': StepLR(optimizer, gamma=0.3, step_size=35),
+            'scheduler': StepLR(optimizer, gamma=0.3, step_size=30),
             'interval': 'epoch', 
             'frequency': 2
         }

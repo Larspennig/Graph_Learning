@@ -21,7 +21,10 @@ class global_tokens(nn.Module):
         self.lin_k = nn.Linear(channels_in, channels_out)
         self.lin_v = nn.Linear(channels_in, channels_out)
         
-        self.pos = nn.Sequential(nn.Linear(3, channels_out),nn.ReLU())
+        self.pos = nn.Sequential(nn.Linear(3, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU(),
+                                 nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU())
+        self.attn = nn.Sequential(nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU(),
+                                  nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU())
 
         return None
 
@@ -34,9 +37,12 @@ class global_tokens(nn.Module):
 
         fps_pos = data.pos[indices]
         fps_x = data.x[indices]
+        fps_batch = data.batch[indices]
 
-        x_q, x_k = self.lin_q(data.x), self.lin_k(data.x)
+        x_q, x_k, p = self.lin_q(data.x), self.lin_k(data.x), self.p(data.pos)
         x_v = self.lin_v(fps_x)
+        
+
 
         
 

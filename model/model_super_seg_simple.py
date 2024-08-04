@@ -82,14 +82,12 @@ class PointTrans_Layer(nn.Module):
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=2,
-            norm=None,
             plain_last=False)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=1,
-            norm=None,
             plain_last=False)
         if use_super:
             self.conv = PointTransformerConv_Super(
