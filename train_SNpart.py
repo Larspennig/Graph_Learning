@@ -84,7 +84,8 @@ def main():
                         callbacks=[checkpoint_callback, early_stopping_callback],
                         default_root_dir=output_dir,
                         accelerator=config['device'],
-                        logger=wandb_logger)
+                        logger=wandb_logger,
+                        log_every_n_steps=1)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
