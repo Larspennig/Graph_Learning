@@ -4,7 +4,7 @@ import os
 import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
-from torch_geometric.utils import add_self_loops, scatter
+from torch_geometric.utils import scatter, softmax
 # from create_graph import create_graph
 
 def generate_graph(data, device='cpu', k=16):
@@ -14,7 +14,7 @@ def generate_graph(data, device='cpu', k=16):
 
 
 class global_attn(nn.Module):
-    def __init__(self,channels_in, channels_out):
+    def __init__(self,channels_in, channels_out, regular_attention = False):
         super(global_attn, self).__init__()
         self.lin_q = nn.Linear(channels_in, channels_out)
         self.lin_k = nn.Linear(channels_in, channels_out)
@@ -24,13 +24,18 @@ class global_attn(nn.Module):
                                  nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU())
         self.attn = nn.Sequential(nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU(),
                                   nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU())
-
+        self.regular_attention = regular_attention
 
 
     def forward(self, data):
+
+        # Get global points via farthest point sampling
         perc = 10/data.x[data.batch == 0].shape[0]
         indices = tgnn.pool.fps(data.pos, ratio=perc, batch=data.batch)
         indices = indices.sort().values
+
+        
+
 
         fps_pos = data.pos[indices]
         fps_x = data.x[indices] #[m, c]
@@ -39,21 +44,30 @@ class global_attn(nn.Module):
         x_q = self.lin_q(data.x) #[n, c]
         x_v, x_k = self.lin_v(fps_x), self.lin_k(fps_x)
 
-        n_sample = data.batch[data.batch==0].shape[0]
-        m_sample = fps_batch[fps_batch==0].shape[0]
+        # Expand batch indices for broadcasting
+        local_batch_expanded = data.batch.unsqueeze(1)  # Shape: (n, 1)
+        global_batch_expanded = fps_batch.unsqueeze(0)  # Shape: (1, m)
 
-        x_k = x_k.repeat(n_sample,1) #[m*n_sample,c]
-        x_k = x_k.reshape(x_q.shape[0],m_sample,-1) #[n,m_sample,c]
+        # Create a mask where local and global tokens have the same batch index
+        mask = (local_batch_expanded == global_batch_expanded)  # Shape: (n, m)
 
-        alpha_raw = x_q.unsqueeze(1) - x_k #[n,m_sample,c]
+        # Get indices where the mask is True
+        local_indices, global_indices = torch.nonzero(mask, as_tuple=True)
 
-        alpha = self.attn(alpha_raw.permute(0,2,1)) #[n,m_sample,c]
+        # Compute positional encoding #TODO: Implement CPE?? This should be way stronger
+        delta = self.pos(data.pos[local_indices]-fps_pos[global_indices])
 
-        attn = torch.softmax(alpha, dim=1) #[n,m_sample,c]
-
-        x_v = x_v.reshape(x_q.shape[0],m_sample,-1) #[n,m_sample,c]
-
-        x_v = x_v * attn #[n,m_sample,c]
+        if self.regular_attention:
+            # what to do about the relative pos encoding ....
+            attn = softmax((x_q[local_indices] * x_k[global_indices]+delta).sum(dim=1), local_indices)
+            x_v = (x_v[global_indices]+delta) * attn.unsqueeze(1)
+            x_v = scatter(x_v, local_indices, dim=0, reduce='add')
+        
+        else:
+            alpha = self.attn(x_q[local_indices]-x_k[global_indices]+delta)
+            alpha = softmax(alpha, local_indices)
+            x_v = (x_v[global_indices]+delta) * alpha
+            x_v = scatter(x_v, local_indices, dim=0, reduce='add')
 
         return x_v
 

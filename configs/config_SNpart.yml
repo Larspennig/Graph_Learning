@@ -1,6 +1,6 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation_SN'
+project_name: 'PointTransformer_Segmentation'
 run_name: 'SN_part_simple'
 
 # Device
@@ -8,14 +8,14 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'super_simple'
+model: 'global'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
-batch_size: 30
+batch_size: 3
 learning_rate: 0.05
 max_epochs: 100
-checkpoints: 'model_checkpoints/2024-08-05_13.03.35SN_part_simple/epoch=11-train_loss=0.52.ckpt'
+checkpoints: None
 
 # Testing?
 test: True
