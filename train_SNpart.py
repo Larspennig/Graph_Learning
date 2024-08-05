@@ -12,7 +12,7 @@ import os
 import wandb
 import torch
 wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
-
+#wandb.init('disable')
 
 def main():
     torch.autograd.set_detect_anomaly(True)

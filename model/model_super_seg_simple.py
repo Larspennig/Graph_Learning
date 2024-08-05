@@ -75,6 +75,8 @@ class PointTrans_Layer(nn.Module):
         self.use_super = use_super
         self.linear_up = torch.nn.Linear(
             in_features=out_channels, out_features=out_channels)
+        self.linear_in = torch.nn.Linear(
+            in_features=in_channels, out_features=out_channels)
 
         self.attn = tgnn.models.MLP(
             in_channels=out_channels,
@@ -106,6 +108,7 @@ class PointTrans_Layer(nn.Module):
 
     def forward(self, data):
         # put create graph here
+        data.x = self.linear_in(data.x).relu()
         if self.use_super:
             out = self.conv(x=data.x.float(),
                             pos=data.pos.float(),
@@ -132,7 +135,6 @@ class PointTrans_Layer_down(nn.Module):
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
         self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
-                                        torch.nn.BatchNorm1d(out_channels),
                                         torch.nn.ReLU())
         self.subsampling = subsampling
         
