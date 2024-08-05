@@ -3,6 +3,7 @@ import torch
 from model.model_seg import TransformerGNN
 from model.model_super_seg_simple import TransformerGNN_super_simple
 from model.model_seg_double_knn import TransformerGNN_double
+from model.model_seg_gctx import TransformerGNN_global
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 
@@ -18,6 +19,8 @@ class Lightning_GNN(LightningModule):
             self.model = TransformerGNN_super_simple(config=config)
         elif config['model'] == 'double':
             self.model = TransformerGNN_double(config=config)
+        elif config['model'] == 'global':
+            self.model = TransformerGNN_global(config=config)
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.config = config
 

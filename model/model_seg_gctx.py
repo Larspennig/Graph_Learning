@@ -13,9 +13,9 @@ def generate_graph(data, device='cpu', k=16):
     return data
 
 
-class global_tokens(nn.Module):
+class global_attn(nn.Module):
     def __init__(self,channels_in, channels_out):
-
+        super(global_attn, self).__init__()
         self.lin_q = nn.Linear(channels_in, channels_out)
         self.lin_k = nn.Linear(channels_in, channels_out)
         self.lin_v = nn.Linear(channels_in, channels_out)
@@ -25,29 +25,38 @@ class global_tokens(nn.Module):
         self.attn = nn.Sequential(nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU(),
                                   nn.Linear(channels_out, channels_out),nn.BatchNorm1d(channels_out),nn.ReLU())
 
-        return None
-
 
 
     def forward(self, data):
-        perc = 10/data.x.shape[0]
+        perc = 10/data.x[data.batch == 0].shape[0]
         indices = tgnn.pool.fps(data.pos, ratio=perc, batch=data.batch)
         indices = indices.sort().values
 
         fps_pos = data.pos[indices]
-        fps_x = data.x[indices]
+        fps_x = data.x[indices] #[m, c]
         fps_batch = data.batch[indices]
 
-        x_q, x_k, p = self.lin_q(data.x), self.lin_k(data.x), self.p(data.pos)
-        x_v = self.lin_v(fps_x)
-        
+        x_q = self.lin_q(data.x) #[n, c]
+        x_v, x_k = self.lin_v(fps_x), self.lin_k(fps_x)
 
+        n_sample = data.batch[data.batch==0].shape[0]
+        m_sample = fps_batch[fps_batch==0].shape[0]
 
-        
+        x_k = x_k.repeat(n_sample,1) #[m*n_sample,c]
+        x_k = x_k.reshape(x_q.shape[0],m_sample,-1) #[n,m_sample,c]
 
+        alpha_raw = x_q.unsqueeze(1) - x_k #[n,m_sample,c]
 
+        alpha = self.attn(alpha_raw.permute(0,2,1)) #[n,m_sample,c]
 
-        return None
+        attn = torch.softmax(alpha, dim=1) #[n,m_sample,c]
+
+        x_v = x_v.reshape(x_q.shape[0],m_sample,-1) #[n,m_sample,c]
+
+        x_v = x_v * attn #[n,m_sample,c]
+
+        return x_v
+
 
 
 class PointTrans_Layer(nn.Module):
@@ -78,18 +87,21 @@ class PointTrans_Layer(nn.Module):
             pos_nn=self.pos,
             attn_nn=self.attn)
         
-        self.norm = tgnn.nn.LayerNorm(out_channels,mode='node')
-
+        self.glob_attn = global_attn(out_channels, out_channels)
+        
     def forward(self, data):
         # put create graph here
         data.x = self.linear_in(data.x).relu()
+        # local attention
         out = self.conv(x=data.x,
                         pos=data.pos.float(),
                         edge_index=data.edge_index)
         out = self.linear_up(out).relu()
-
+        # global attention
+        glob_out = self.glob_attn(data)
         # create skip connection
-        data.x = out + data.x
+        data.x = out + data.x + glob_out
+        
         return data
 
 
@@ -195,7 +207,7 @@ class Dec_block(nn.Module):
         return x_2
 
 
-class TransformerGNN(nn.Module):
+class TransformerGNN_global(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
