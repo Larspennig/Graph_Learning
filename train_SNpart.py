@@ -89,7 +89,8 @@ def main():
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
-                val_dataloaders=val_loader)
+                val_dataloaders=val_loader,
+                ckpt_path=config['checkpoints'])
 
     if config['test']:
         dataset_test = SNpart_Dataset(root=config['root'],

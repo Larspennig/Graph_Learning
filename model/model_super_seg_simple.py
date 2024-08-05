@@ -48,6 +48,9 @@ class generate_graph(nn.Module):
 
         dist = torch.norm(emb_g[edges_large[0]] - emb_g[edges_large[1]], dim = 1)
 
+        # clipping distances to avoid numerical instability
+        dist = torch.clamp(dist, min=1e-6, max=5.0) 
+
         # calculate connection probability
         p = torch.exp(-self.t*dist)
 

@@ -15,6 +15,7 @@ subsampling: 'fps' # fps or grid
 batch_size: 30
 learning_rate: 0.05
 max_epochs: 100
+checkpoints: '/glob/g01-cache/bgdm/lars/Graph_Learning/model_checkpoints/2024-08-05_13.03.35SN_part_simple/epoch=11-train_loss=0.52.ckpt'
 
 # Testing?
 test: True
