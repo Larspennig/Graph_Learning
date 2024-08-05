@@ -170,11 +170,11 @@ class PointTransformerConv_Super(MessagePassing):
                 ptr: OptTensor, size_i: Optional[int], turn_off_pos_enc=False) -> Tensor:
 
         delta = self.pos_nn(pos_i - pos_j)
-
+        '''
         if turn_off_pos_enc:
             # mask positional encodings for sparse global edges 
             delta[:edge_index_soft_v.shape[1],:] = torch.zeros_like(delta[:edge_index_soft_v.shape[1],:])
-
+        '''
         alpha = alpha_i - alpha_j + delta
         if self.attn_nn is not None:
             alpha = self.attn_nn(alpha)

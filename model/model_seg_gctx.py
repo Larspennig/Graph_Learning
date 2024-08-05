@@ -1,4 +1,3 @@
-
 import torch_geometric as tg
 import numpy as np
 import os
@@ -64,14 +63,14 @@ class PointTrans_Layer(nn.Module):
             in_channels=out_channels,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=2
-            norm=None)
+            num_layers=2,
+            plain_last=False)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
             num_layers=1,
-            norm=None)
+            plain_last=None)
 
         self.conv = tgnn.PointTransformerConv(
             in_channels=out_channels,

@@ -12,10 +12,10 @@ import os
 import wandb
 import torch
 wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
-# wandb.login()
 
 
 def main():
+    torch.autograd.set_detect_anomaly(True)
     # Load array with params from config.yml
     with open('configs/config_SNpart.yml', 'r') as f:
         config = yaml.safe_load(f)
@@ -85,7 +85,9 @@ def main():
                         default_root_dir=output_dir,
                         accelerator=config['device'],
                         logger=wandb_logger,
-                        log_every_n_steps=1)
+                        log_every_n_steps=1,
+                        limit_train_batches=1,
+                        limit_val_batches=1)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
