@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
 from torch_geometric.utils import scatter, softmax
-from sklearn.neighbors import NearestNeighbors
 # from create_graph import create_graph
 
 
@@ -58,8 +57,8 @@ class global_attn(nn.Module):
         # aggregate new positions for gobal nodes
         fps_x = scatter(euc_kernel.unsqueeze(
             1)*data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')
-        fps_pos = scatter(euc_kernel.unsqueeze(
-            1)*data.pos[edge_index[0]], edge_index[1], dim=0, reduce='mean')
+        # fps_pos = scatter(euc_kernel.unsqueeze(
+        #   1)*data.pos[edge_index[0]], edge_index[1], dim=0, reduce='mean')
 
         x_q = self.lin_q(data.x)  # [n, c]
         x_v, x_k = self.lin_v(fps_x), self.lin_k(fps_x)
@@ -144,7 +143,7 @@ class PointTrans_Layer(nn.Module):
         # global attention
         glob_out = self.glob_attn(data)
         # create skip connection
-        data.x = out + data.x + glob_out
+        data.x = data.x + out + glob_out
 
         return data
 

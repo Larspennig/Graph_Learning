@@ -1,14 +1,14 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation_SN'
-run_name: 'SN_part_simple'
+project_name: 'PointTransformer_Segmentation'
+run_name: 'SN_part_global_first'
 
 # Device
 device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'super_simple'
+model: 'global'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
