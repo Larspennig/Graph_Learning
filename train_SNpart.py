@@ -1,6 +1,6 @@
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
-from loaders.Sndataloader import SNpart_Dataset
+from loaders.Sndataloader2 import SNpart_Dataset
 from model.GNN_inf_seg import Lightning_GNN
 from sklearn.model_selection import train_test_split
 import torch_geometric as tg
@@ -11,8 +11,8 @@ import yaml
 import os
 import wandb
 import torch
-wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
-# wandb.init('disable')
+# wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
+wandb.init('disable')
 
 
 def main():

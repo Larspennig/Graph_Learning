@@ -1,14 +1,14 @@
 # Configuration for Graph Learning
 
-project_name: 'PointTransformer_Segmentation'
-run_name: 'SN_part_global_first'
+project_name: 'PointTransformer_Segmentation_nd'
+run_name: 'SN_part_standard'
 
 # Device
 device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'global'
+model: 'standard'
 subsampling: 'fps' # fps or grid 
 
 # Training parameters
@@ -21,7 +21,7 @@ checkpoints: None
 test: True
 
 # Data parameters
-root: 'data/ShapeNet_Part/'
+root: 'data/shapenet_core/'
 sample_size : 0.3  # only Stanford3d
 
 # Model parameters
