@@ -21,7 +21,7 @@ checkpoints: None
 test: True
 
 # Data parameters
-root: 'data/shapenet_core/'
+root: '../data/shapenet_core/'
 sample_size : 0.3  # only Stanford3d
 
 # Model parameters
