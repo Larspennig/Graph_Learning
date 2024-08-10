@@ -112,8 +112,8 @@ class Lightning_GNN(LightningModule):
         return accr
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.model.parameters(
-        ), lr=self.config['learning_rate'], weight_decay=0.0001)
+        optimizer = torch.optim.SGD(self.model.parameters(
+        ), lr=self.config['learning_rate'],momentum=0.9, weight_decay=0.0001)
 
         scheduler = {
             'scheduler': StepLR(optimizer, gamma=0.4, step_size=80),
