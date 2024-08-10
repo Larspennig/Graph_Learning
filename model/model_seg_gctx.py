@@ -57,6 +57,7 @@ class global_attn(nn.Module):
         # aggregate new positions for gobal nodes
         fps_x = scatter(euc_kernel.unsqueeze(
             1)*data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')
+        
         # fps_pos = scatter(euc_kernel.unsqueeze(
         #   1)*data.pos[edge_index[0]], edge_index[1], dim=0, reduce='mean')
 

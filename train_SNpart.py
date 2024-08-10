@@ -39,15 +39,9 @@ def main():
 
     # Model setup
     GNN_model = Lightning_GNN(config=config)
-
-    # data = next(iter(train_loader))
-    # GNN_model(data)
-
     GNN_model.to(config['device'])
-
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
     print(f'Model has {count_parameters(GNN_model)} parameters.')
 
     # Setup output dir
@@ -56,8 +50,7 @@ def main():
         config['checkpoints'], run_time+config['run_name'])
     checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
-    # logger = CSVLogger(save_dir=output_dir,flush_logs_every_n_steps=10)
-
+    # Set up logger
     wandb_logger = WandbLogger(
         project=config['project_name'], name=config['run_name'])
     wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
@@ -81,8 +74,7 @@ def main():
     # Train
     trainer = pl.Trainer(max_epochs=config['max_epochs'],
                          check_val_every_n_epoch=1,
-                         callbacks=[checkpoint_callback,
-                                    early_stopping_callback],
+                         callbacks=[checkpoint_callback],
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
@@ -117,6 +109,12 @@ def main():
         # Perform testing
         test_results = trainer.test(model=GNN_model, dataloaders=test_loader)
         print(f"Test Results: {test_results}")
+
+        # Getting dataset level metrics that cannot be computed in a batch-wise manner
+        miou, macc, oa, ious, accs = GNN_model.cm.all_metrics()
+        print('miou: ', miou)
+        print('macc: ', macc)
+        print('oa: ', oa)
 
         wandb_logger.experiment.log({"test_results": test_results})
 

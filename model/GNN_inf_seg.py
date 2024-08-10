@@ -5,6 +5,7 @@ from model.model_super_seg_simple import TransformerGNN_super_simple
 from model.model_seg_double_knn import TransformerGNN_double
 from model.model_seg_gctx import TransformerGNN_global
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
+from utils.metrics import ConfusionMatrix
 
 
 class Lightning_GNN(LightningModule):
@@ -23,6 +24,7 @@ class Lightning_GNN(LightningModule):
             self.model = TransformerGNN_global(config=config)
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.config = config
+        self.cm = ConfusionMatrix(config['num_classes'])
 
     def forward(self, inputs):
         return self.model(inputs)
@@ -86,7 +88,7 @@ class Lightning_GNN(LightningModule):
         accr = torch.sum(values == target)/len(target)
         self.log('test_acc', accr, on_epoch=True,
                  batch_size=self.config['batch_size'])
-
+    
         # Compute MIoU
         num_classes = self.config['num_classes']
         confusion_matrix = torch.zeros(
@@ -105,7 +107,8 @@ class Lightning_GNN(LightningModule):
         MIoU = IoU[IoU.nonzero()].mean()
         self.log('test_miou', MIoU, on_epoch=True,
                  batch_size=self.config['batch_size'])
-
+    
+        self.cm.update(values, target)
         return accr
 
     def configure_optimizers(self):
@@ -113,7 +116,7 @@ class Lightning_GNN(LightningModule):
         ), lr=self.config['learning_rate'], momentum=0.9, weight_decay=0.0001)
 
         scheduler = {
-            'scheduler': StepLR(optimizer, gamma=0.3, step_size=35),
+            'scheduler': StepLR(optimizer, gamma=0.5, step_size=80),
             'interval': 'epoch',
             'frequency': 1
         }

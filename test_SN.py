@@ -10,7 +10,7 @@ import os
 import wandb
 import torch
 
-with open('/home/lars/output_SN_super/Graph_Learning/configs/config_SNpart.yml', 'r') as f:
+with open('/home/lars/Graph_Learning/configs/config_SNpart.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 config['batch_size'] = 20
@@ -26,13 +26,19 @@ test_loader = tg.loader.DataLoader(dataset_test,
 
 # Model setup
 GNN_model = Lightning_GNN(config=config)
-GNN_model.load_state_dict(torch.load('/home/lars/output_SN_super/Graph_Learning/model_checkpoints/2024-07-12_06.44.33/epoch=126-train_loss=0.82.ckpt')['state_dict'])
-GNN_model.to('cpu')
+GNN_model.load_state_dict(torch.load('/home/lars/output_SN/output_baseline_new/2024-08-04_18.41.59SN_part_baseline/epoch=82-train_loss=0.18.ckpt')['state_dict'])
+#GNN_model.to('cpu')
 
 # Test
 trainer = pl.Trainer(max_epochs=1,
-                     accelerator='cpu',
+                     accelerator='cuda',
                      log_every_n_steps=1)
 
 trainer.test(GNN_model,
             dataloaders=test_loader) 
+
+# Getting dataset level metrics
+miou, macc, oa, ious, accs = GNN_model.cm.all_metrics()
+print('miou: ', miou)
+print('macc: ', macc)
+print('oa: ', oa)
