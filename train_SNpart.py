@@ -53,7 +53,6 @@ def main():
     # Set up logger
     wandb_logger = WandbLogger(
         project=config['project_name'], name=config['run_name'])
-    wandb_logger.experiment.config['learning_rate'] = config['learning_rate']
     wandb_logger.experiment.config['k_down'] = 16
 
     # Set up checkpoint callback
