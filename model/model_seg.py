@@ -61,7 +61,7 @@ class PointTrans_Layer_down(nn.Module):
     def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cpu', subsampling = 'fps'):
         super().__init__()
         self.grid_size = grid_size
-        self.perc_points = 0.5
+        self.perc_points = 0.25
         self.device = device
         self.linear = torch.nn.Linear(in_features=in_channels,
                                       out_features=out_channels)
