@@ -72,6 +72,7 @@ class SNpart_Dataset(Dataset):
     def get(self, idx):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
-
+        if self.split == 'test':
+            return data
         data = self.transforms(data)
         return data
