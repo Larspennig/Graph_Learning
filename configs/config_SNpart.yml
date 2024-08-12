@@ -4,17 +4,19 @@ project_name: 'PointTransformer_Segmentation'
 run_name: 'SN_part_baseline'
 
 # Device
-device: 'cuda'
+device: 'cpu'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
 model: 'standard'
-subsampling: 'fps' # fps or grid 
 
 # Training parameters
 batch_size: 3
 learning_rate: 0.05
 max_epochs: 200
+# Scheduler parameters
+step_size: 80
+step_gamma: 0.2
 
 # Testing?
 test: True
@@ -25,10 +27,13 @@ sample_size : 0.3  # only Stanford3d
 
 # Model parameters
 num_classes : 50
-grid_size : [0.03,0.06,0.10,0.20]
+grid_size : [0.03,0.03,0.06,0.10,0.20]
 k_up : 3
 k_down : 16
+blocks: [1,2,3,5,2]
+value_down: [1,0.25,0.25,0.25,0.25]
+channels: [32, 64, 128, 256, 512]
+in_channels: 3
+subsampling: 'fps' # fps or grid 
 
-# scheduler not implemented yet
-step_size: 20
 

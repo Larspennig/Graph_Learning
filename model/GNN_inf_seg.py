@@ -116,7 +116,7 @@ class Lightning_GNN(LightningModule):
         ), lr=self.config['learning_rate'],momentum=0.9, weight_decay=0.0001)
 
         scheduler = {
-            'scheduler': StepLR(optimizer, gamma=0.2, step_size=80),
+            'scheduler': StepLR(optimizer, gamma=self.config['step_gamma'], step_size=self.config['step_size']),
             'interval': 'epoch',
             'frequency': 1
         }
