@@ -15,7 +15,7 @@ class SNpart_Dataset(Dataset):
     def __init__(self, root, transform=None, split='train', pre_transform=None, pre_filter=None):
         self.split = split
         self.root = root
-        self.transforms = tgt.Compose([tgt.RandomJitter(0.01),
+        self.transforms = tgt.Compose([tgt.RandomJitter(0.001),
                                       tgt.RandomRotate(30, axis=0),
                                       tgt.RandomRotate(30, axis=1),
                                       tgt.RandomRotate(30, axis=2)])

@@ -1,5 +1,5 @@
 from lightning.pytorch.callbacks import ModelCheckpoint
-from loaders.Sndataloader import SNpart_Dataset
+from loaders.Sndataloader2 import SNpart_Dataset
 from model.GNN_inf_seg import Lightning_GNN
 import torch_geometric as tg
 import numpy as np
@@ -26,12 +26,12 @@ test_loader = tg.loader.DataLoader(dataset_test,
 
 # Model setup
 GNN_model = Lightning_GNN(config=config)
-GNN_model.load_state_dict(torch.load('/home/lars/output_SN/output_baseline_new/2024-08-04_18.41.59SN_part_baseline/epoch=82-train_loss=0.18.ckpt')['state_dict'])
-#GNN_model.to('cpu')
+GNN_model.load_state_dict(torch.load('/home/lars/2024-08-12_13.56.12SN_part_blocks_base/epoch=196-train_loss=0.16.ckpt')['state_dict'])
+GNN_model.to('cpu')
 
 # Test
 trainer = pl.Trainer(max_epochs=1,
-                     accelerator='cuda',
+                     accelerator='cpu',
                      log_every_n_steps=1)
 
 trainer.test(GNN_model,
