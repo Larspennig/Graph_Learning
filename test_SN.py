@@ -27,11 +27,11 @@ test_loader = tg.loader.DataLoader(dataset_test,
 # Model setup
 GNN_model = Lightning_GNN(config=config)
 GNN_model.load_state_dict(torch.load('/home/lars/output_SN/output_baseline_new/2024-08-04_18.41.59SN_part_baseline/epoch=82-train_loss=0.18.ckpt')['state_dict'])
-#GNN_model.to('cpu')
+GNN_model.to('cpu')
 
 # Test
 trainer = pl.Trainer(max_epochs=1,
-                     accelerator='cuda',
+                     accelerator='cpu',
                      log_every_n_steps=1)
 
 trainer.test(GNN_model,
