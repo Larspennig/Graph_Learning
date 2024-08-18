@@ -4,7 +4,7 @@ project_name: 'PointTransformer_Segmentation_nd'
 run_name: 'SN_part_blocks_base'
 
 # Device
-device: 'cuda'
+device: 'cpu'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
@@ -27,6 +27,7 @@ sample_size : 0.3  # only S3DIS
 
 # Model parameters
 num_classes : 50
+num_categories: 16 #only ShapeNetPart
 grid_size : [0.03,0.03,0.06,0.10,0.20]
 k_up : 3
 k_down : 16

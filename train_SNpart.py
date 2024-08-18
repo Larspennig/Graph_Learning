@@ -105,17 +105,29 @@ def main():
             accelerator=config['device'],
             logger=wandb_logger)
 
-        # Perform testing
-        test_results = trainer.test(model=GNN_model, dataloaders=test_loader)
-        print(f"Test Results: {test_results}")
+        # Compute all final metrics
+        print('FINAL METRICS')
 
-        # Getting dataset level metrics that cannot be computed in a batch-wise manner
+        # Get instance metrics
+        instance_miou = trainer.logged_metrics['test_miou']
+        print('instance_miou: ', instance_miou.item())
+
+        # Get category metrics
+        cat_mious = GNN_model.cat_ious
+        all_ious = []
+        for key in cat_mious.keys():
+            cat_mious[key]['miou'] = torch.mean(torch.stack(cat_mious[key]['ious']))
+            all_ious.append(cat_mious[key]['miou'])
+            category = dataset_test.number2name[key]
+        cat_miou = torch.mean(torch.stack(all_ious))
+        print('cat_miou: ', cat_miou.item())
+
+        # Get dataset level metrics
         miou, macc, oa, ious, accs = GNN_model.cm.all_metrics()
+        print('DATASET LEVEL METRICS ON PART LEVEL')
         print('miou: ', miou)
         print('macc: ', macc)
         print('oa: ', oa)
-
-        wandb_logger.experiment.log({"test_results": test_results})
 
 
 if __name__ == '__main__':

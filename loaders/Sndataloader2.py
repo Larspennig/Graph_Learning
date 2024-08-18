@@ -19,6 +19,11 @@ class SNpart_Dataset(Dataset):
                                       tgt.RandomRotate(30, axis=0),
                                       tgt.RandomRotate(30, axis=1),
                                       tgt.RandomRotate(30, axis=2)])
+        
+        self.id2name = np.loadtxt(self.root+'/synsetoffset2category.txt', dtype=str)
+        self.id2name = dict(zip(self.id2name[:, 1], self.id2name[:, 0]))
+        self.id2number = dict(zip(self.id2name.keys(), range(len(self.id2name))))
+        self.number2name = dict(zip(self.id2number.values(), self.id2name.values()))
 
         super().__init__(root, transform, pre_transform, pre_filter)
 
@@ -73,6 +78,10 @@ class SNpart_Dataset(Dataset):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
         data.x = torch.cat([data.x, data.pos], dim=1)
+        # append part name
+        data.cat_id = self.id2number[self.processed_file_names[idx].split('/')[0]]
+
+
         if self.split == 'test':
             return data
         data = self.transforms(data)

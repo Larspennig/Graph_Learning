@@ -6,6 +6,29 @@ from model.model_seg_double_knn import TransformerGNN_double
 from model.model_seg_gctx import TransformerGNN_global
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from utils.metrics import ConfusionMatrix
+from torchmetrics import JaccardIndex
+import math
+
+
+
+def compute_ins_miou(target, values, num_classes):
+    confusion_matrix = torch.zeros(
+        num_classes, num_classes, dtype=torch.int64, device='cuda')
+
+    for t, p in zip(target.view(-1), values.view(-1)):
+        confusion_matrix[t.long(), p.long()] += 1
+
+    IoU = torch.zeros(num_classes, device='cuda')
+    for cls in range(num_classes):
+        TP = confusion_matrix[cls, cls]
+        FP = confusion_matrix[:, cls].sum() - TP
+        FN = confusion_matrix[cls, :].sum() - TP
+        IoU[cls] = TP / (TP + FP + FN + 1e-10)  # Avoid division by zero
+
+    MIoU = IoU[IoU.nonzero()].mean()
+    if math.isnan(MIoU): # if no part is correctly predicted
+        MIoU = torch.tensor(0.).cuda()
+    return MIoU
 
 
 class Lightning_GNN(LightningModule):
@@ -25,6 +48,7 @@ class Lightning_GNN(LightningModule):
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.config = config
         self.cm = ConfusionMatrix(config['num_classes'])
+        self.cat_ious = {i: {'ious': [], 'num': 0} for i in range(config['num_categories'])}
 
     def forward(self, inputs):
         return self.model(inputs)
@@ -58,24 +82,8 @@ class Lightning_GNN(LightningModule):
             len(target.to(self.dev))
         self.log('val_acc', accr, on_epoch=True,
                  batch_size=self.config['batch_size'])
-        '''
-        # Compute MIoU
-        num_classes = self.config['num_classes']
-        confusion_matrix = torch.zeros(num_classes, num_classes, dtype=torch.int64, device=self.device)
-
-        for t, p in zip(target.view(-1), values.view(-1)):
-            confusion_matrix[t.long(), p.long()] += 1
-
-        IoU = torch.zeros(num_classes, device=self.device)
-        for cls in range(num_classes):
-            TP = confusion_matrix[cls, cls]
-            FP = confusion_matrix[:, cls].sum() - TP
-            FN = confusion_matrix[cls, :].sum() - TP
-            IoU[cls] = TP / (TP + FP + FN + 1e-10)  # Avoid division by zero
-
-        MIoU = IoU[IoU.nonzero()].mean()
-        self.log('val_miou', MIoU, on_epoch=True, batch_size=self.config['batch_size'])
-        '''
+        #MIoU = compute_ins_miou(target, values, self.config['num_classes'])
+        #self.log('val_miou', MIoU, on_epoch=True, batch_size=self.config['batch_size'])
         return loss
 
     def test_step(self, batch):
@@ -88,24 +96,23 @@ class Lightning_GNN(LightningModule):
         accr = torch.sum(values == target)/len(target)
         self.log('test_acc', accr, on_epoch=True,
                  batch_size=self.config['batch_size'])
+        
+        batch_ious = []
     
         # Compute MIoU
-        num_classes = self.config['num_classes']
-        confusion_matrix = torch.zeros(
-            num_classes, num_classes, dtype=torch.int64, device=self.device)
-
-        for t, p in zip(target.view(-1), values.view(-1)):
-            confusion_matrix[t.long(), p.long()] += 1
-
-        IoU = torch.zeros(num_classes, device=self.device)
-        for cls in range(num_classes):
-            TP = confusion_matrix[cls, cls]
-            FP = confusion_matrix[:, cls].sum() - TP
-            FN = confusion_matrix[cls, :].sum() - TP
-            IoU[cls] = TP / (TP + FP + FN + 1e-10)  # Avoid division by zero
-
-        MIoU = IoU[IoU.nonzero()].mean()
-        self.log('test_miou', MIoU, on_epoch=True,
+        # here iterate over batch and compute miou per sample
+        # save mIoU per sample and per category
+        for i,sample in enumerate(inputs.batch.unique()):
+            mask = inputs.batch == sample
+            target_sample = target[mask]
+            values_sample = values[mask]
+            sample_iou = compute_ins_miou(target_sample, values_sample, self.config['num_classes'])
+            self.cat_ious[inputs.cat_id[i].item()]['ious'].append(sample_iou)
+            self.cat_ious[inputs.cat_id[i].item()]['num'] += 1
+            batch_ious.append(sample_iou)
+        
+        ins_MIoU = torch.mean(torch.stack(batch_ious))
+        self.log('test_miou', ins_MIoU, on_epoch=True,
                  batch_size=self.config['batch_size'])
     
         self.cm.update(values, target)
