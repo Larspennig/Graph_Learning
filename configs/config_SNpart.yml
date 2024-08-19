@@ -4,11 +4,11 @@ project_name: 'PointTransformer_Segmentation_nd'
 run_name: 'SN_part_blocks_base'
 
 # Device
-device: 'cpu'
+device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'global'
 
 # Training parameters
 batch_size: 30
@@ -31,10 +31,8 @@ num_categories: 16 #only ShapeNetPart
 grid_size : [0.03,0.03,0.06,0.10,0.20]
 k_up : 3
 k_down : 16
-blocks: [1,2,3,5,2]
+blocks: [1,2,2,2,1]
 value_down: [1,0.25,0.25,0.25,0.25]
 channels: [32, 64, 128, 256, 512]
 in_channels: 6
 subsampling: 'fps' # fps or grid 
-
-

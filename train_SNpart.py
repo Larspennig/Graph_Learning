@@ -11,8 +11,8 @@ import yaml
 import os
 import wandb
 import torch
-#wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
-# wandb.init('disable')
+wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
+wandb.init('disable')
 
 
 def main():
@@ -104,6 +104,13 @@ def main():
         trainer = pl.Trainer(
             accelerator=config['device'],
             logger=wandb_logger)
+
+        # test the model
+        test_results = trainer.test(GNN_model,
+                     test_dataloaders=test_loader)
+        
+        print('TEST RESULTS Lightning')
+        print(test_results)
 
         # Compute all final metrics
         print('FINAL METRICS')

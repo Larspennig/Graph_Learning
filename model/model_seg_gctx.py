@@ -8,13 +8,16 @@ from torch_geometric.utils import scatter, softmax
 # from create_graph import create_graph
 
 
-def generate_graph(data, device='cpu', k=16):
+def generate_graph(data, k=16):
     # initalize graph
     data = tg.transforms.KNNGraph(k=k)(data)
     return data
 
 
 class global_attn(nn.Module):
+    """
+    This implements a gobal attention module with the PointTransformer attention mechanism
+    """
     def __init__(self, channels_in, channels_out, regular_attention=False):
         super(global_attn, self).__init__()
         self.lin_q = nn.Linear(channels_in, channels_out)
@@ -45,11 +48,13 @@ class global_attn(nn.Module):
         fps_x = data.x[indices]  # [m, c]
         fps_batch = data.batch[indices]
 
+
+        ### Local 2 Global
         edge_index = tgnn.pool.knn(
             fps_pos, data.pos, k=1, batch_x=fps_batch, batch_y=data.batch)
         # aggregate new values for global nodes
         euc_kernel = 1 / \
-            (1+5*(data.pos[edge_index[0]] -
+            (1+20*(data.pos[edge_index[0]] -
              fps_pos[edge_index[1]]).pow(2).sum(dim=1))
 
         # feat_kernel = torch.exp(data.x[edge_index[0]] @ fps_x[edge_index[1]].T)/torch.exp(data.x[edge_index[0]] @ fps_x[1]).sum()
@@ -61,6 +66,7 @@ class global_attn(nn.Module):
         # fps_pos = scatter(euc_kernel.unsqueeze(
         #   1)*data.pos[edge_index[0]], edge_index[1], dim=0, reduce='mean')
 
+        ### Global 2 Local
         x_q = self.lin_q(data.x)  # [n, c]
         x_v, x_k = self.lin_v(fps_x), self.lin_k(fps_x)
 
@@ -73,16 +79,6 @@ class global_attn(nn.Module):
 
         # Get indices where the mask is True
         local_indices, global_indices = torch.nonzero(mask, as_tuple=True)
-
-        # aggregate new values for global nodes
-        euc_kernel = 1 / \
-            (1+5*(data.pos[local_indices] -
-             fps_pos[global_indices]).pow(2).sum(dim=1))
-        # feat_kernel = data.x[local_indices] * fps_x[global_indices]
-
-        # aggregate new positions for gobal nodes
-        fps_x = scatter(euc_kernel.unsqueeze(
-            1)*data.x[local_indices], global_indices, dim=0, reduce='mean')
 
         # Compute positional encoding #TODO: Implement CPE?? This should be way stronger
         delta = self.pos(data.pos[local_indices]-fps_pos[global_indices])
@@ -101,6 +97,42 @@ class global_attn(nn.Module):
             x_v = scatter(x_v, local_indices, dim=0, reduce='add')
 
         return x_v
+    
+
+
+class GlobalAttention(nn.Module):
+    def __init__(self, in_channels, out_channels, regular_attention=False):
+        super().__init__()
+
+        self.lin_in = nn.Linear(in_channels, out_channels)
+        self.lin_out = nn.Linear(in_channels, out_channels)
+        self.bn = nn.BatchNorm1d(out_channels)
+
+        self.glob_attn = global_attn(in_channels, out_channels, regular_attention)
+
+
+    def forward(self, data):
+        data.x = self.lin_in(data.x)
+        out = self.glob_attn(data)
+        out = self.lin_out(data.x)
+        data.x = data.x + out
+        return data
+
+
+class Glob_Loc(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.glob = GlobalAttention(in_channels, out_channels)
+        self.loc = PointTrans_Layer(in_channels, out_channels)
+
+    def forward(self, data):
+        x_glob = self.glob(data)
+        x_loc = self.loc(data)
+
+        x_loc.x = x_loc.x + x_glob.x
+
+        return x_loc
 
 
 class PointTrans_Layer(nn.Module):
@@ -111,7 +143,7 @@ class PointTrans_Layer(nn.Module):
             in_features=out_channels, out_features=out_channels)
         self.linear_in = torch.nn.Linear(
             in_features=in_channels, out_features=out_channels)
-
+        
         self.attn = tgnn.models.MLP(
             in_channels=out_channels,
             out_channels=out_channels,
@@ -122,86 +154,82 @@ class PointTrans_Layer(nn.Module):
             in_channels=3,
             out_channels=out_channels,
             hidden_channels=out_channels,
-            num_layers=1,
-            plain_last=None)
-
+            num_layers=2,
+            plain_last=False)
+        
         self.conv = tgnn.PointTransformerConv(
             in_channels=out_channels,
             out_channels=out_channels,
             pos_nn=self.pos,
             attn_nn=self.attn)
-
-        self.glob_attn = global_attn(out_channels, out_channels)
+        
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.bn2 = nn.BatchNorm1d(out_channels)
 
     def forward(self, data):
         # put create graph here
-        data.x = self.linear_in(data.x).relu()
-        # local attention
+        data.x = self.bn1(self.linear_in(data.x))
         out = self.conv(x=data.x,
                         pos=data.pos.float(),
                         edge_index=data.edge_index)
-        out = self.linear_up(out).relu()
-        # global attention
-        glob_out = self.glob_attn(data)
-        # create skip connection
-        data.x = data.x + out + glob_out
+        out = self.bn2(self.linear_up(out)).relu()
 
+        # create skip connection
+        data.x = out + data.x
         return data
 
 
 class PointTrans_Layer_down(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, grid_size=0.5, device='cpu', subsampling='fps'):
+    def __init__(self, in_channels=3, out_channels=3, value_down=0.5, subsampling = 'fps'):
         super().__init__()
-        self.grid_size = grid_size
-        self.perc_points = 0.5
-        self.device = device
-        self.linear = torch.nn.Linear(in_features=in_channels,
-                                      out_features=out_channels)
+        self.value_down = value_down
         self.down = torch.nn.Sequential(torch.nn.Linear(in_features=in_channels, out_features=out_channels),
-                                        torch.nn.BatchNorm1d(out_channels),
                                         torch.nn.ReLU())
         self.subsampling = subsampling
-
+        
     def forward(self, data):
         # linear projectionlong
         data_up = tg.data.Data(x=self.down(data.x.float()),
                                batch=data.batch.long(), pos=data.pos, y=data.y.long(), edge_index=data.edge_index)
+        
+        if self.value_down == 1:    
+            return generate_graph(data_up)
+        
         # pooling and maxpool
         if self.subsampling == 'grid':
             max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
             del max_pooled_data.edge_index
-            data_out = tg.transforms.GridSampling(
-                self.grid_size)(max_pooled_data)
+            data_out = tg.transforms.GridSampling(self.value_down)(max_pooled_data)
         if self.subsampling == 'fps':
             # farthest point sampling
-            index = tgnn.pool.fps(
-                data.pos, ratio=self.perc_points, batch=data.batch)
+            index = tgnn.pool.fps(data.pos, ratio=self.value_down, batch=data.batch)
             index = index.sort().values
             # pooling
-            max_pooled_data = tgnn.max_pool_neighbor_x(data_up)
-            max_pooled_data.x = max_pooled_data.x[index, :]
-            max_pooled_data.pos = max_pooled_data.pos[index]
-            max_pooled_data.batch = max_pooled_data.batch[index]
-            max_pooled_data.y = max_pooled_data.y[index]
-            data_out = max_pooled_data
-        return data_out
+            max_p = tgnn.max_pool_neighbor_x(data_up)
+            max_p.x, max_p.pos, max_p.batch, max_p.y = max_p.x[index], max_p.pos[index], max_p.batch[index], max_p.y[index]
+            data_out = max_p
+        return generate_graph(data_out)
 
 
 class PointTrans_Layer_up(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, device='cuda', k_up=3) -> None:
+    def __init__(self, in_channels=3, out_channels=3, special='no', k_up=3) -> None:
         super().__init__()
-        # replace with sequential batchnorm and relu
-        self.device = device
+        self.special = special
         self.k_up = k_up
         self.linear1 = torch.nn.Linear(
             in_features=in_channels, out_features=out_channels)
         self.linear2 = torch.nn.Linear(
             in_features=out_channels, out_features=out_channels)
 
-    def forward(self, data_1, data_2):
+    def forward(self, data):
         # upstream input
-        data_1.x = self.linear1(data_1.x.float())
         # skip connection input
+        if self.special == 'one_input':
+            data.x = self.linear1(data.x.float())
+            return data
+        
+        data_1, data_2 = data
+        data_1.x = self.linear1(data_1.x.float())
         data_2.x = self.linear2(data_2.x.float())
 
         # interpolation
@@ -213,101 +241,75 @@ class PointTrans_Layer_up(nn.Module):
                                              k=self.k_up)
 
         data = tg.data.Data(x=x_int, pos=data_2.pos, batch=data_2.batch)
-        return data
-
-
-class Enc_block(nn.Module):
-    def __init__(self, in_channels, out_channels, grid_size, config):
-        super().__init__()
-        self.k_down = config['k_down']
-        self.device = config['device']
-        self.downlayer = PointTrans_Layer_down(in_channels=in_channels,
-                                               out_channels=out_channels,
-                                               grid_size=grid_size,
-                                               subsampling=config['subsampling'])
-
-        self.pconv = PointTrans_Layer(in_channels=out_channels,
-                                      out_channels=out_channels)
-
-    def forward(self, data):
-        x_1 = self.downlayer(data)
-        x_1 = generate_graph(x_1, device=self.device, k=self.k_down)
-        x_2 = self.pconv(x_1)
-        return x_2
-
-
-class Dec_block(nn.Module):
-    def __init__(self, in_channels, out_channels, config):
-        super().__init__()
-        self.config = config
-        self.uplayer = PointTrans_Layer_up(
-            in_channels=in_channels, out_channels=out_channels)
-        self.pconv = PointTrans_Layer(
-            in_channels=out_channels, out_channels=out_channels)
-
-    def forward(self, data_1, data_2):
-        x_1 = self.uplayer(data_1, data_2)
-        x_1 = generate_graph(
-            x_1, device=self.config['device'], k=self.config['k_up'])
-        x_2 = self.pconv(x_1)
-        return x_2
+        return generate_graph(data)
 
 
 class TransformerGNN_global(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.linear = torch.nn.Linear(in_features=3, out_features=32)
-        self.pconv_in = PointTrans_Layer(in_channels=32, out_channels=32)
+        self.in_channels, channels = config['in_channels'], config['channels']
+        value_down = config['value_down']
+        subsampling = config['subsampling']
+        blocks = config['blocks']
 
-        self.enc1 = Enc_block(in_channels=32, out_channels=64,
-                              grid_size=config['grid_size'][0], config=config)
-        self.enc2 = Enc_block(in_channels=64, out_channels=128,
-                              grid_size=config['grid_size'][1], config=config)
-        self.enc3 = Enc_block(in_channels=128, out_channels=256,
-                              grid_size=config['grid_size'][2], config=config)
-        self.enc4 = Enc_block(in_channels=256, out_channels=512,
-                              grid_size=config['grid_size'][3], config=config)
+        self.enc1 = self._make_encoder(blocks = blocks[0], channels=channels[0], value_down=value_down[0], subsampling=subsampling)
+        self.enc2 = self._make_encoder(blocks = blocks[1], channels=channels[1], value_down=value_down[1], subsampling=subsampling)
+        self.enc3 = self._make_encoder(blocks = blocks[2], channels=channels[2], value_down=value_down[2], subsampling=subsampling)
+        self.enc4 = self._make_encoder(blocks = blocks[3], channels=channels[3], value_down=value_down[3], subsampling=subsampling)
+        self.enc5 = self._make_encoder(blocks = blocks[4], channels=channels[4], value_down=value_down[4], subsampling=subsampling)
 
-        self.linear_mid = torch.nn.Linear(in_features=512, out_features=512)
-        self.pconv_mid = PointTrans_Layer(in_channels=512, out_channels=512)
-
-        self.dec1 = Dec_block(in_channels=512, out_channels=256, config=config)
-        self.dec2 = Dec_block(in_channels=256, out_channels=128, config=config)
-        self.dec3 = Dec_block(in_channels=128, out_channels=64, config=config)
-        self.dec4 = Dec_block(in_channels=64, out_channels=32, config=config)
-
-        self.linear_out = torch.nn.Linear(in_features=32, out_features=13)
+        self.dec1 = self._make_decoder(blocks = 1, channels = channels[4], special = 'one_input')
+        self.dec2 = self._make_decoder(blocks = 1, channels = channels[3])
+        self.dec3 = self._make_decoder(blocks = 1, channels = channels[2])
+        self.dec4 = self._make_decoder(blocks = 1, channels = channels[1])
+        self.dec5 = self._make_decoder(blocks = 1, channels = channels[0])
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=32, out_features=64),
-            torch.nn.BatchNorm1d(num_features=64),
             torch.nn.ReLU(),
             torch.nn.Linear(in_features=64, out_features=config['num_classes']))
+    
+    def _make_encoder(self, blocks, channels, value_down, subsampling):
+        layers = [PointTrans_Layer_down(in_channels=self.in_channels, out_channels=channels, value_down=value_down, subsampling=subsampling)]
+
+        self.in_channels = channels
+
+        for idx in range(blocks):
+            if idx == 0:
+                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
+            else:
+                layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+        return nn.Sequential(*layers)
+    
+    def _make_decoder(self, blocks, channels, special = 'no'):
+        layers = [PointTrans_Layer_up(in_channels=self.in_channels, out_channels=channels, special = special)]
+        
+        self.in_channels = channels
+
+        for idx in range(blocks):
+            if idx == 0:
+                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
+            else:
+                layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+        return nn.Sequential(*layers)
 
     def forward(self, data):
-        # first_block
-        data.x = data.x.float()
-        data.x = self.linear(data.x)
-        data = generate_graph(data)
-        x_1 = self.pconv_in(data)
-
+        x_1 = data
         # encoder
         x_2 = self.enc1(x_1)
         x_3 = self.enc2(x_2)
         x_4 = self.enc3(x_3)
         x_5 = self.enc4(x_4)
-
-        # mid_layer
-        x_5.x = self.linear_mid(x_5.x)
-        x_6 = self.pconv_mid(x_5)
+        x_6 = self.enc5(x_5)
 
         # decoder
-        x_7 = self.dec1(x_6, x_4)
-        x_8 = self.dec2(x_7, x_3)
-        x_9 = self.dec3(x_8, x_2)
-        x_10 = self.dec4(x_9, x_1)
+        x_7 = self.dec1(x_6)
+        x_8 = self.dec2((x_7, x_5))
+        x_9 = self.dec3((x_8, x_4))
+        x_10 = self.dec4((x_9, x_3))
+        x_11 = self.dec5((x_10, x_2))
 
         # output
-        x_10 = self.output_head(x_10.x.float())
-        return x_10
+        x_11 = self.output_head(x_11.x.float())
+        return x_11
