@@ -106,8 +106,7 @@ def main():
             logger=wandb_logger)
 
         # test the model
-        test_results = trainer.test(GNN_model,
-                     test_dataloaders=test_loader)
+        test_results = trainer.test(GNN_model, dataloaders=test_loader)
         
         print('TEST RESULTS Lightning')
         print(test_results)
