@@ -14,6 +14,35 @@ def generate_graph(data, k=16):
     return data
 
 
+class glob2loc(nn.Module):
+    def __init__(self, channels_in, channels_out):
+        super(glob2loc, self).__init__()
+        self.pos_d_l = nn.Sequential(nn.Linear(3, channels_out),
+                        nn.BatchNorm1d(channels_out),
+                        nn.ReLU(),
+                        nn.Linear(channels_out, channels_out),
+                        nn.BatchNorm1d(channels_out),
+                        nn.ReLU())
+
+        self.feat_mlp_loc = nn.Sequential(nn.Linear(channels_out, channels_out),
+                                  nn.BatchNorm1d(channels_out),
+                                  nn.ReLU(),
+                                  nn.Linear(channels_out, channels_out),
+                                  nn.BatchNorm1d(channels_out),
+                                  nn.ReLU())
+        
+    def forward(self, data, edge_index, fps_pos):
+        delta_feat = data.x[edge_index[0]] - scatter(data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')[edge_index[1]]
+
+        pos_enc = self.pos_d_l(fps_pos[edge_index[1]]-data.pos[edge_index[0]])
+        attn_loc = softmax(self.feat_mlp_loc(delta_feat+pos_enc), edge_index[1])
+
+        fps_n_x = scatter(attn_loc*data.x[edge_index[0]]*pos_enc, edge_index[1], dim=0, reduce='mean')
+        
+        return fps_n_x
+
+
+
 class global_attn(nn.Module):
     """
     This implements a gobal attention module with the PointTransformer attention mechanism
@@ -37,6 +66,7 @@ class global_attn(nn.Module):
                                   nn.BatchNorm1d(channels_out),
                                   nn.ReLU())
         self.regular_attention = regular_attention
+        self.glob2loc = glob2loc(channels_in, channels_out)
 
     def forward(self, data):
         # Get global points via farthest point sampling
@@ -48,27 +78,25 @@ class global_attn(nn.Module):
         fps_x = data.x[indices]  # [m, c]
         fps_batch = data.batch[indices]
 
-
         ### Local 2 Global
         edge_index = tgnn.pool.knn(
             fps_pos, data.pos, k=1, batch_x=fps_batch, batch_y=data.batch)
+        
+        fps_n_x = self.glob2loc(data, edge_index, fps_pos)
+        
+        '''
         # aggregate new values for global nodes
         euc_kernel = 1 / \
             (1+5*(data.pos[edge_index[0]] -
              fps_pos[edge_index[1]]).pow(2).sum(dim=1))
-
-        # feat_kernel = torch.exp(data.x[edge_index[0]] @ fps_x[edge_index[1]].T)/torch.exp(data.x[edge_index[0]] @ fps_x[1]).sum()
-
-        # aggregate new positions for gobal nodes
+        
+        # aggregate new features for gobal nodes
         fps_x = scatter(euc_kernel.unsqueeze(
             1)*data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')
-        
-        # fps_pos = scatter(euc_kernel.unsqueeze(
-        #   1)*data.pos[edge_index[0]], edge_index[1], dim=0, reduce='mean')
-
+        '''
         ### Global 2 Local
         x_q = self.lin_q(data.x)  # [n, c]
-        x_v, x_k = self.lin_v(fps_x), self.lin_k(fps_x)
+        x_v, x_k = self.lin_v(fps_n_x), self.lin_k(fps_n_x)
 
         # Expand batch indices for broadcasting
         local_batch_expanded = data.batch.unsqueeze(1)  # Shape: (n, 1)
