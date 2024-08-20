@@ -54,7 +54,7 @@ class global_attn(nn.Module):
             fps_pos, data.pos, k=1, batch_x=fps_batch, batch_y=data.batch)
         # aggregate new values for global nodes
         euc_kernel = 1 / \
-            (1+20*(data.pos[edge_index[0]] -
+            (1+5*(data.pos[edge_index[0]] -
              fps_pos[edge_index[1]]).pow(2).sum(dim=1))
 
         # feat_kernel = torch.exp(data.x[edge_index[0]] @ fps_x[edge_index[1]].T)/torch.exp(data.x[edge_index[0]] @ fps_x[1]).sum()
@@ -166,6 +166,8 @@ class PointTrans_Layer(nn.Module):
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.bn2 = nn.BatchNorm1d(out_channels)
 
+        self.global_attn = global_attn(in_channels, out_channels)
+
     def forward(self, data):
         # put create graph here
         data.x = self.bn1(self.linear_in(data.x))
@@ -174,8 +176,9 @@ class PointTrans_Layer(nn.Module):
                         edge_index=data.edge_index)
         out = self.bn2(self.linear_up(out)).relu()
 
+        glob_out = self.global_attn(data)
         # create skip connection
-        data.x = out + data.x
+        data.x = out + data.x + glob_out
         return data
 
 
@@ -276,10 +279,13 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
+            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+            '''
             if idx == 0:
                 layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
             else:
                 layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+            '''
         return nn.Sequential(*layers)
     
     def _make_decoder(self, blocks, channels, special = 'no'):
@@ -288,10 +294,7 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-            if idx == 0:
-                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
-            else:
-                layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
         return nn.Sequential(*layers)
 
     def forward(self, data):

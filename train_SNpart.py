@@ -11,8 +11,6 @@ import yaml
 import os
 import wandb
 import torch
-wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
-#wandb.init('disable')
 
 
 def main():
@@ -20,6 +18,13 @@ def main():
     # Load array with params from config.yml
     with open('configs/config_SNpart.yml', 'r') as f:
         config = yaml.safe_load(f)
+    
+    if config['debug']:
+        wandb.init('disable')
+        config['device'] = 'cpu'
+        config['batch_size'] = 3
+    else: 
+        wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
 
     # Data setup
     dataset_train = SNpart_Dataset(root=config['root'],
