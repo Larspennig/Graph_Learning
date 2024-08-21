@@ -1,8 +1,8 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_blocks_glob_w_nonlin'
-debug: True
+run_name: 'SN_part_blocks_glob_w_lparam'
+debug: False
 
 # Device
 device: 'cuda'
