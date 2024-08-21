@@ -132,18 +132,18 @@ class GlobalAttention(nn.Module):
     def __init__(self, in_channels, out_channels, regular_attention=False):
         super().__init__()
 
-        self.lin_in = nn.Linear(in_channels, out_channels)
         self.lin_out = nn.Linear(in_channels, out_channels)
         self.bn = nn.BatchNorm1d(out_channels)
 
         self.glob_attn = global_attn(in_channels, out_channels, regular_attention)
+        self.bn = nn.BatchNorm1d(out_channels)
 
 
     def forward(self, data):
-        data.x = self.lin_in(data.x)
         out = self.glob_attn(data)
-        out = self.lin_out(data.x)
-        data.x = data.x + out
+        out = self.bn(self.lin_out(out)).relu()
+        # create skip connection
+        data.x = out + data.x
         return data
 
 
@@ -194,19 +194,16 @@ class PointTrans_Layer(nn.Module):
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.bn2 = nn.BatchNorm1d(out_channels)
 
-        self.global_attn = global_attn(in_channels, out_channels)
-
     def forward(self, data):
         # put create graph here
-        data.x = self.bn1(self.linear_in(data.x))
+        data.x = self.bn1(self.linear_in(data.x)).relu()
         out = self.conv(x=data.x,
                         pos=data.pos.float(),
                         edge_index=data.edge_index)
         out = self.bn2(self.linear_up(out)).relu()
 
-        glob_out = self.global_attn(data)
         # create skip connection
-        data.x = out + data.x + glob_out
+        data.x = out + data.x
         return data
 
 
@@ -307,13 +304,10 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
-            '''
             if idx == 0:
                 layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
             else:
                 layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
-            '''
         return nn.Sequential(*layers)
     
     def _make_decoder(self, blocks, channels, special = 'no'):
@@ -322,7 +316,10 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+            if idx == 0:
+                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
+            else:
+                layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
         return nn.Sequential(*layers)
 
     def forward(self, data):
