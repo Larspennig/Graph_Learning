@@ -55,6 +55,10 @@ def main():
         config['checkpoints'], run_time+config['run_name'])
     checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
+    # copy model to output dir
+    os.makedirs(output_dir, exist_ok=True)
+    os.system('cp -r model/model_seg_gctx.py' + output_dir)
+
     # Set up logger
     wandb_logger = WandbLogger(
         project=config['project_name'], name=config['run_name'])
