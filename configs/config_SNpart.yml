@@ -1,15 +1,15 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_blocks_base_wskip'
-debug: False
+run_name: 'SN_part_blocks_global_wskip'
+debug: True
 
 # Device
 device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'global'
 
 # Training parameters
 batch_size: 30
