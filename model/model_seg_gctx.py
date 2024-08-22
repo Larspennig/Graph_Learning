@@ -269,7 +269,7 @@ class PointTrans_Layer_up(nn.Module):
                                              batch_y=data_2.batch,
                                              k=self.k_up)
 
-        data = tg.data.Data(x=x_int, pos=data_2.pos, batch=data_2.batch)
+        data = tg.data.Data(x=x_int+data_2.x, pos=data_2.pos, batch=data_2.batch)
         return generate_graph(data)
 
 
