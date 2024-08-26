@@ -93,6 +93,8 @@ class Stanford_Dataset(Dataset):
             idx += 1
             print(f'Processed {idx}/{len(self.raw_paths)}')
 
+        a = 1
+
     def len(self):
         return len(self.processed_file_names)
 
@@ -102,4 +104,8 @@ class Stanford_Dataset(Dataset):
         
         data = self.transform_1(data)
         data = self.transform_2(data)
+
+        # add absolute positions to features and turn tensors to float
+        data.x = torch.cat([data.x, data.pos], dim=1).float()
+        data.pos = data.pos.float()
         return data

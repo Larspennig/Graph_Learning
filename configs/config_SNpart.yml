@@ -2,7 +2,8 @@
 
 project_name: 'PointTransformer_Segmentation_nd'
 run_name: 'SN_part_blocks_global_wskip'
-debug: False
+debug: True
+data: 'ShapeNetPart'
 
 # Device
 device: 'cuda'

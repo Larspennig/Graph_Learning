@@ -14,7 +14,6 @@ import torch
 
 
 def main():
-    torch.autograd.set_detect_anomaly(True)
     # Load array with params from config.yml
     with open('configs/config_SNpart.yml', 'r') as f:
         config = yaml.safe_load(f)

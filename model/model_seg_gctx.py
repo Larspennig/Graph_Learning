@@ -224,6 +224,9 @@ class PointTrans_Layer_down(nn.Module):
         if self.value_down == 1:    
             return generate_graph(data_up)
         
+        if data_up.edge_index is None:
+            data_up = generate_graph(data_up)
+        
         # pooling and maxpool
         if self.subsampling == 'grid':
             max_pooled_data = tgnn.max_pool_neighbor_x(data_up)

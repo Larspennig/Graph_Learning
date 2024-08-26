@@ -1,28 +1,39 @@
 # Configuration for Graph Learning
 
+project_name: 'PointTransformer_S3DIS'
+run_name: 's3dis_base'
+debug: False
+data: 'S3DIS'
+
 # Device
-device: 'cpu'
+device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
+model: 'standard'
 
 # Training parameters
-batch_size: 2
-epochs: 200
+batch_size: 4
 learning_rate: 0.05
-max_epochs: 200
+max_epochs: 50
+# Scheduler parameters
+step_size: 80
+step_gamma: 0.2
+
+# Testing?
+test: True
 
 # Data parameters
 root: 'data/Stanford3dDataset/'
-sample_size : 0.3  # only Stanford3d
+sample_size : 0.03  # only S3DIS
 
 # Model parameters
-model: 'standard'
 num_classes : 14
-grid_size : [0.9,1.6,2,2.5]
-k_up : 16
+num_categories: None #only ShapeNetPart
+k_up : 3
 k_down : 16
-
-# scheduler
-step_size: 20
-
+blocks: [1,1,1,1,1]
+value_down: [1,0.06,0.15,0.375,0.9375]
+channels: [32, 64, 128, 256, 512]
+in_channels: 6
+subsampling: 'grid' # fps or grid
