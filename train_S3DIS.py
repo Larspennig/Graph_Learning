@@ -59,7 +59,6 @@ def main():
     # Set up logger
     wandb_logger = WandbLogger(
         project=config['project_name'], name=config['run_name'])
-    wandb_logger.experiment.config['k_down'] = 16
 
 
     checkpoint_callback = ModelCheckpoint(save_top_k=3,
