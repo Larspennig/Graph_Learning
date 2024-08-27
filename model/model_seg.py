@@ -9,7 +9,6 @@ from torch_geometric.nn import PointTransformerConv
 from typing import Callable, Optional, Tuple, Union
 from torch import Tensor
 
-
 from torch_geometric.typing import (
     Adj,
     OptTensor,

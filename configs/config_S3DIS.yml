@@ -2,7 +2,7 @@
 
 project_name: 'PointTransformer_S3DIS'
 run_name: 's3dis_base'
-debug: False
+debug: True
 data: 'S3DIS'
 
 # Device
@@ -13,7 +13,7 @@ checkpoints: 'model_checkpoints/'
 model: 'standard'
 
 # Training parameters
-batch_size: 1
+batch_size: 4
 learning_rate: 0.005
 max_epochs: 10
 # Scheduler parameters
@@ -25,7 +25,9 @@ test: True
 
 # Data parameters
 root: 'data/Stanford3dDataset/'
-sample_size : 0.03  # only S3DIS
+# only S3DIS
+sample_size : 0.03
+N_max : 50000
 
 # Model parameters
 num_classes : 14

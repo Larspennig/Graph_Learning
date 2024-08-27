@@ -34,10 +34,12 @@ def main():
 
     # Data setup
     dataset_train = Stanford_Dataset(root=config['root'],
-                                    split='train')
+                                    split='train',
+                                    N_max = config['N_max'])
 
     dataset_val = Stanford_Dataset(root=config['root'],
-                                split = 'test')
+                                split = 'test',
+                                N_max = config['N_max'])
 
     train_loader = tg.loader.DataLoader(dataset_train,
                                         batch_size=config['batch_size'],
@@ -88,8 +90,7 @@ def main():
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,
-                         accumulate_grad_batches=4)
+                         log_every_n_steps=1,)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,

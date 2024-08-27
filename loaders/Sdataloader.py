@@ -7,10 +7,24 @@ from sklearn.neighbors import kneighbors_graph
 import torch_geometric as tgg
 import yaml
 
+def crop_data(data, N_max):
+    if data.num_nodes > N_max:
+        # get the indices of the N_max closest points to the initial point 
+        init_idx = torch.randint(0, data.num_nodes-1,[1,1]).squeeze()
+        dists = ((data.pos - data.pos[init_idx])**2).squeeze().sum(dim=1)
+        idx = torch.argsort(dists)[:N_max]
+
+        data.x = data.x[idx]
+        data.pos = data.pos[idx]
+        data.y = data.y[idx]
+
+    return data
+
 
 class Stanford_Dataset(Dataset):
-    def __init__(self, root, transform=None, split='train', pre_transform=None, pre_filter=None):
+    def __init__(self, root, transform=None, split='train', N_max = 100000, pre_transform=None, pre_filter=None):
         self.split = split
+        self.N_max = N_max
         with open('classes_seg.yml', 'r') as f:
             self.classes = yaml.safe_load(f)
         self.transform_1 = tg.transforms.RandomJitter(translate=0.015)
@@ -102,6 +116,8 @@ class Stanford_Dataset(Dataset):
         data = torch.load(self.processed_dir+'/' +
                           self.processed_file_names[idx])
         
+        data = crop_data(data, self.N_max)
+
         data = self.transform_1(data)
         data = self.transform_2(data)
 
