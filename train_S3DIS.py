@@ -22,7 +22,7 @@ def main():
         wandb.init('disable')
         config['device'] = 'cpu'
         config['batch_size'] = 2
-        config['max_epochs'] = 1
+        config['max_epochs'] = 2
     else: 
         wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
 
