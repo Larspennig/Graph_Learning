@@ -13,7 +13,7 @@ checkpoints: 'model_checkpoints/'
 model: 'standard'
 
 # Training parameters
-batch_size: 3
+batch_size: 1
 learning_rate: 0.005
 max_epochs: 10
 # Scheduler parameters
@@ -35,5 +35,6 @@ k_down : 16
 blocks: [1,1,1,1,1]
 value_down: [1,0.06,0.15,0.375,0.9375]
 channels: [32, 64, 128, 256, 512]
+strides: [1,1,2,2,4]
 in_channels: 6
 subsampling: 'grid' # fps or grid

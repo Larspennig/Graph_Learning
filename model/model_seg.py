@@ -4,19 +4,87 @@ import os
 import torch
 import torch.nn as nn
 import torch_geometric.nn as tgnn
-from torch_geometric.utils import add_self_loops, scatter
-# from create_graph import create_graph
+from torch_geometric.utils import add_self_loops, scatter, softmax, remove_self_loops
+from torch_geometric.nn import PointTransformerConv
+from typing import Callable, Optional, Tuple, Union
+from torch import Tensor
 
+
+from torch_geometric.typing import (
+    Adj,
+    OptTensor,
+    PairTensor,
+    SparseTensor,
+    torch_sparse,
+)
+
+# from create_graph import create_graph
 
 def generate_graph(data, k=16):
     # initalize graph
     data = tg.transforms.KNNGraph(k=k)(data)
     return data
 
+class Custom_Transformer(PointTransformerConv):
+    def __init__(self, in_channels, out_channels, pos_nn, attn_nn, stride):
+        super().__init__(in_channels = in_channels,
+                 out_channels = out_channels, pos_nn = pos_nn,
+                 attn_nn = attn_nn)
+        self.stride = stride
+    ''''
+    Method overwritten from PointTransformerConv torch_geometric class to account for grouped attention via strides
+    
+    '''
+    def forward(
+        self,
+        x: Union[Tensor, PairTensor],
+        pos: Union[Tensor, PairTensor],
+        edge_index: Adj,
+    ) -> Tensor:
+
+        if isinstance(x, Tensor):
+            alpha = (self.lin_src(x), self.lin_dst(x))
+            x = (self.lin(x), x)
+        else:
+            alpha = (self.lin_src(x[0]), self.lin_dst(x[1]))
+            x = (self.lin(x[0]), x[1])
+
+        if isinstance(pos, Tensor):
+            pos = (pos, pos)
+
+        if self.add_self_loops:
+            if isinstance(edge_index, Tensor):
+                edge_index, _ = remove_self_loops(edge_index)
+                edge_index, _ = add_self_loops(
+                    edge_index, num_nodes=min(pos[0].size(0), pos[1].size(0)))
+            elif isinstance(edge_index, SparseTensor):
+                edge_index = torch_sparse.set_diag(edge_index)
+
+        # propagate_type: (x: PairTensor, pos: PairTensor, alpha: PairTensor)
+        out = self.propagate(edge_index, x=x, pos=pos, alpha=alpha)
+        return out
+
+    def message(self, x_j: Tensor, pos_i: Tensor, pos_j: Tensor,
+                alpha_i: Tensor, alpha_j: Tensor, index: Tensor,
+                ptr: OptTensor, size_i: Optional[int]) -> Tensor:
+
+        delta = self.pos_nn(pos_i - pos_j)
+        alpha = alpha_i - alpha_j + delta
+        if self.attn_nn is not None:
+            alpha = self.attn_nn(alpha)
+        if self.stride is not None:
+            alpha = alpha.repeat(1, self.stride)
+        alpha = softmax(alpha, index, ptr, size_i)
+        return alpha * (x_j + delta)
+
 
 class PointTrans_Layer(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=3, stride=1):
         super().__init__()
+        self.stride = stride
+
+        if out_channels % stride != 0:
+            raise ValueError('out_channels must be divisible by stride')
 
         self.linear_up = torch.nn.Linear(
             in_features=out_channels, out_features=out_channels)
@@ -25,22 +93,23 @@ class PointTrans_Layer(nn.Module):
         
         self.attn = tgnn.models.MLP(
             in_channels=out_channels,
-            out_channels=out_channels,
-            hidden_channels=out_channels,
+            out_channels=out_channels // stride,
+            hidden_channels=out_channels // stride,
             num_layers=2,
             plain_last=False)
         self.pos = tgnn.models.MLP(
             in_channels=3,
             out_channels=out_channels,
-            hidden_channels=out_channels,
+            hidden_channels=out_channels // 2,
             num_layers=2,
             plain_last=False)
         
-        self.conv = tgnn.PointTransformerConv(
+        self.conv = Custom_Transformer(
             in_channels=out_channels,
             out_channels=out_channels,
             pos_nn=self.pos,
-            attn_nn=self.attn)
+            attn_nn=self.attn,
+            stride=stride)
         
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.bn2 = nn.BatchNorm1d(out_channels)
@@ -50,7 +119,7 @@ class PointTrans_Layer(nn.Module):
         data.x = self.bn1(self.linear_in(data.x))
         out = self.conv(x=data.x,
                         pos=data.pos.float(),
-                        edge_index=data.edge_index)
+                        edge_index=data.edge_index,)
         out = self.bn2(self.linear_up(out)).relu()
 
         # create skip connection
@@ -134,40 +203,41 @@ class TransformerGNN(nn.Module):
         value_down = config['value_down']
         subsampling = config['subsampling']
         blocks = config['blocks']
+        strides = config['strides']
 
-        self.enc1 = self._make_encoder(blocks = blocks[0], channels=channels[0], value_down=value_down[0], subsampling=subsampling)
-        self.enc2 = self._make_encoder(blocks = blocks[1], channels=channels[1], value_down=value_down[1], subsampling=subsampling)
-        self.enc3 = self._make_encoder(blocks = blocks[2], channels=channels[2], value_down=value_down[2], subsampling=subsampling)
-        self.enc4 = self._make_encoder(blocks = blocks[3], channels=channels[3], value_down=value_down[3], subsampling=subsampling)
-        self.enc5 = self._make_encoder(blocks = blocks[4], channels=channels[4], value_down=value_down[4], subsampling=subsampling)
+        self.enc1 = self._make_encoder(blocks = blocks[0], channels=channels[0], value_down=value_down[0], subsampling=subsampling, stride=strides[0])
+        self.enc2 = self._make_encoder(blocks = blocks[1], channels=channels[1], value_down=value_down[1], subsampling=subsampling, stride=strides[1])
+        self.enc3 = self._make_encoder(blocks = blocks[2], channels=channels[2], value_down=value_down[2], subsampling=subsampling, stride=strides[2])
+        self.enc4 = self._make_encoder(blocks = blocks[3], channels=channels[3], value_down=value_down[3], subsampling=subsampling, stride=strides[3])
+        self.enc5 = self._make_encoder(blocks = blocks[4], channels=channels[4], value_down=value_down[4], subsampling=subsampling, stride=strides[4])
 
-        self.dec1 = self._make_decoder(blocks = 1, channels = channels[4], special = 'one_input')
-        self.dec2 = self._make_decoder(blocks = 1, channels = channels[3])
-        self.dec3 = self._make_decoder(blocks = 1, channels = channels[2])
-        self.dec4 = self._make_decoder(blocks = 1, channels = channels[1])
-        self.dec5 = self._make_decoder(blocks = 1, channels = channels[0])
+        self.dec1 = self._make_decoder(blocks = 1, channels = channels[4], special = 'one_input', stride=strides[4])
+        self.dec2 = self._make_decoder(blocks = 1, channels = channels[3], stride=strides[3])
+        self.dec3 = self._make_decoder(blocks = 1, channels = channels[2], stride=strides[2])
+        self.dec4 = self._make_decoder(blocks = 1, channels = channels[1], stride=strides[1])
+        self.dec5 = self._make_decoder(blocks = 1, channels = channels[0], stride=strides[0])
 
         self.output_head = torch.nn.Sequential(
             torch.nn.Linear(in_features=32, out_features=64),
             torch.nn.ReLU(),
             torch.nn.Linear(in_features=64, out_features=config['num_classes']))
     
-    def _make_encoder(self, blocks, channels, value_down, subsampling):
+    def _make_encoder(self, blocks, channels, value_down, subsampling, stride = 1):
         layers = [PointTrans_Layer_down(in_channels=self.in_channels, out_channels=channels, value_down=value_down, subsampling=subsampling)]
 
         self.in_channels = channels
 
         for _ in range(blocks):
-            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels, stride=stride))
         return nn.Sequential(*layers)
     
-    def _make_decoder(self, blocks, channels, special = 'no'):
+    def _make_decoder(self, blocks, channels, special = 'no', stride = 1):
         layers = [PointTrans_Layer_up(in_channels=self.in_channels, out_channels=channels, special = special)]
         
         self.in_channels = channels
 
         for _ in range(blocks):
-            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+            layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels, stride=stride))
         return nn.Sequential(*layers)
 
     def forward(self, data):

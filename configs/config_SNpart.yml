@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'global'
+model: 'standard'
 
 # Training parameters
 batch_size: 30
@@ -36,5 +36,6 @@ k_down : 16
 blocks: [1,1,1,1,1]
 value_down: [1,0.25,0.25,0.25,0.25]
 channels: [32, 64, 128, 256, 512]
+strides: [1,1,1,1,1]
 in_channels: 6
 subsampling: 'fps' # fps or grid 

@@ -79,7 +79,7 @@ def main():
         verbose=True
     )
 
-    strategy = DDPStrategy(find_unused_parameters=True)
+    #strategy = DDPStrategy(find_unused_parameters=True)
 
    # Train
     trainer = pl.Trainer(max_epochs=config['max_epochs'],
@@ -89,7 +89,7 @@ def main():
                          accelerator=config['device'],
                          logger=wandb_logger,
                          log_every_n_steps=1,
-                         strategy=strategy)
+                         accumulate_grad_batches=4)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
