@@ -1,5 +1,6 @@
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+from lightning.pytorch.strategies import DDPStrategy
 from loaders.Sdataloader import Stanford_Dataset
 from model.GNN_inf_seg import Lightning_GNN
 from sklearn.model_selection import train_test_split
@@ -78,6 +79,8 @@ def main():
         verbose=True
     )
 
+    strategy = DDPStrategy(find_unused_parameters=True)
+
    # Train
     trainer = pl.Trainer(max_epochs=config['max_epochs'],
                          check_val_every_n_epoch=1,
@@ -85,7 +88,8 @@ def main():
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,)
+                         log_every_n_steps=1,
+                         strategy=strategy)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
