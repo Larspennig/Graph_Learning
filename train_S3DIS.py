@@ -19,12 +19,17 @@ def main():
         config = yaml.safe_load(f)
     
     if config['debug']:
-        wandb.init('disable')
+        #wandb.init('disable')
         config['device'] = 'cpu'
         config['batch_size'] = 2
         config['max_epochs'] = 2
     else: 
         wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
+
+        # Set up logger
+    wandb_logger = WandbLogger(
+        project=config['project_name'], name=config['run_name'])
+
 
     # Data setup
     dataset_train = Stanford_Dataset(root=config['root'],
@@ -55,10 +60,6 @@ def main():
         config['checkpoints'], run_time+config['run_name'])
     checkpoint_filename = "{epoch:02d}-{train_loss:.2f}"
 
-
-    # Set up logger
-    wandb_logger = WandbLogger(
-        project=config['project_name'], name=config['run_name'])
 
 
     checkpoint_callback = ModelCheckpoint(save_top_k=3,
