@@ -46,6 +46,8 @@ def main():
     val_loader = tg.loader.DataLoader(dataset_val,
                                     batch_size=config['batch_size'],
                                     num_workers=2)
+    print('train_loader')
+    print(len(train_loader))
 
     # Model setup
     GNN_model = Lightning_GNN(config=config)
