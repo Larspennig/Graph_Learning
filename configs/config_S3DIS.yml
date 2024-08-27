@@ -2,7 +2,7 @@
 
 project_name: 'PointTransformer_S3DIS'
 run_name: 's3dis_base'
-debug: True
+debug: False
 data: 'S3DIS'
 
 # Device
