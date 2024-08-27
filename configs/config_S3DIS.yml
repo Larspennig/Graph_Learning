@@ -15,7 +15,7 @@ model: 'standard'
 # Training parameters
 batch_size: 4
 learning_rate: 0.005
-max_epochs: 50
+max_epochs: 10
 # Scheduler parameters
 step_size: 80
 step_gamma: 0.2
