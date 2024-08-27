@@ -92,8 +92,8 @@ class Lightning_GNN(LightningModule):
         batch_ious = []
         for i,sample in enumerate(inputs.batch.unique()):
             mask = inputs.batch == sample
-            target_sample = target[mask]
-            values_sample = values[mask]
+            target_sample = target[mask.to(self.dev)]
+            values_sample = values[mask.to(self.dev)]
             sample_iou = compute_ins_miou(target_sample, values_sample, self.config['num_classes'])
             if self.dataset == 'ShapeNetPart':
                 self.cat_ious[inputs.cat_id[i].item()]['ious'].append(sample_iou)
