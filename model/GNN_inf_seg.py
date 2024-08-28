@@ -89,20 +89,22 @@ class Lightning_GNN(LightningModule):
         # Compute MIoU
         # here iterate over batch and compute miou per sample
         # save mIoU per sample and per category
-        batch_ious = []
-        for i,sample in enumerate(inputs.batch.unique()):
-            mask = inputs.batch == sample
-            target_sample = target[mask.cpu()]
-            values_sample = values[mask.cpu()]
-            sample_iou = compute_ins_miou(target_sample, values_sample, self.config['num_classes'])
-            if self.dataset == 'ShapeNetPart':
-                self.cat_ious[inputs.cat_id[i].item()]['ious'].append(sample_iou)
-                self.cat_ious[inputs.cat_id[i].item()]['num'] += 1
-            batch_ious.append(sample_iou)
-        
-        ins_MIoU = torch.mean(torch.stack(batch_ious))
-        self.log('test_miou', ins_MIoU, on_epoch=True,
-                 batch_size=self.config['batch_size'])
+        # only compute all 10 epochs 
+        if self.current_epoch % 10 == 0:
+            batch_ious = []
+            for i,sample in enumerate(inputs.batch.unique()):
+                mask = inputs.batch == sample
+                target_sample = target[mask.cpu()]
+                values_sample = values[mask.cpu()]
+                sample_iou = compute_ins_miou(target_sample, values_sample, self.config['num_classes'])
+                if self.dataset == 'ShapeNetPart':
+                    self.cat_ious[inputs.cat_id[i].item()]['ious'].append(sample_iou)
+                    self.cat_ious[inputs.cat_id[i].item()]['num'] += 1
+                batch_ious.append(sample_iou)
+            
+            ins_MIoU = torch.mean(torch.stack(batch_ious))
+            self.log('val_miou', ins_MIoU, on_epoch=True,
+                    batch_size=self.config['batch_size'])
         return loss
 
     def test_step(self, batch):

@@ -85,13 +85,12 @@ def main():
 
    # Train
     trainer = pl.Trainer(max_epochs=config['max_epochs'],
-                         check_val_every_n_epoch=1,
+                         check_val_every_n_epoch=5,
                          callbacks=[checkpoint_callback],
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,
-                         limit_train_batches=1)
+                         log_every_n_steps=1,)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,

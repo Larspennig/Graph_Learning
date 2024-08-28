@@ -15,15 +15,16 @@ model: 'standard'
 # Training parameters
 batch_size: 4
 learning_rate: 0.005
-max_epochs: 10
+max_epochs: 500
+N_max : 60000
+
 # Scheduler parameters
-step_size: 80
+step_size: 180
 step_gamma: 0.2
-N_max : 50000
 
 
 # Val parameters
-batch_size_val: 1
+batch_size_val: 2
 N_max_val: null
 
 # Testing?
