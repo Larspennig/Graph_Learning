@@ -19,6 +19,12 @@ max_epochs: 10
 # Scheduler parameters
 step_size: 80
 step_gamma: 0.2
+N_max : 50000
+
+
+# Val parameters
+batch_size_val: 1
+N_max_val: None
 
 # Testing?
 test: True
@@ -27,7 +33,6 @@ test: True
 root: 'data/Stanford3dDataset/'
 # only S3DIS
 sample_size : 0.03
-N_max : 50000
 
 # Model parameters
 num_classes : 14
