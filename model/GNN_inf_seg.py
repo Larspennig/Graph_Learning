@@ -90,7 +90,7 @@ class Lightning_GNN(LightningModule):
         # here iterate over batch and compute miou per sample
         # save mIoU per sample and per category
         # only compute all 10 epochs 
-        if self.current_epoch % 10 == 0:
+        if (self.current_epoch+1) % 10 == 0:
             batch_ious = []
             for i,sample in enumerate(inputs.batch.unique()):
                 mask = inputs.batch == sample
