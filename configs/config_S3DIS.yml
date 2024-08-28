@@ -24,7 +24,7 @@ N_max : 50000
 
 # Val parameters
 batch_size_val: 1
-N_max_val: None
+N_max_val: null
 
 # Testing?
 test: True
