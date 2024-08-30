@@ -20,7 +20,7 @@ def main():
         config = yaml.safe_load(f)
     
     if config['debug']:
-        #wandb.init('disable')
+        wandb.init('disable')
         config['device'] = 'cpu'
         config['batch_size'] = 2
         config['max_epochs'] = 2

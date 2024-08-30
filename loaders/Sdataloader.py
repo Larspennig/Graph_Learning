@@ -6,6 +6,7 @@ import torch_geometric as tg
 from sklearn.neighbors import kneighbors_graph
 import torch_geometric as tgg
 import yaml
+from utils.transform import RandomScale, RandomDropColor
 
 def crop_data(data, N_max):
     if data.num_nodes > N_max:
@@ -29,6 +30,8 @@ class Stanford_Dataset(Dataset):
             self.classes = yaml.safe_load(f)
         self.transform_1 = tg.transforms.RandomJitter(translate=0.015)
         self.transform_2 = tg.transforms.RandomRotate(180, axis=2)
+        self.transform_3 = RandomScale(scale_low=0.8, scale_high=1.2)
+        self.transform_4 = RandomDropColor(p=0.8, color_augment=0.0)
 
         super().__init__(root, transform, pre_transform, pre_filter)
 
@@ -121,6 +124,8 @@ class Stanford_Dataset(Dataset):
 
         data = self.transform_1(data)
         data = self.transform_2(data)
+        data = self.transform_3(data)
+        data = self.transform_4(data)
 
         # add absolute positions to features and turn tensors to float
         data.x = torch.cat([data.x, data.pos], dim=1).float()

@@ -14,12 +14,12 @@ model: 'standard'
 
 # Training parameters
 batch_size: 4
-learning_rate: 0.005
+learning_rate: 0.05
 max_epochs: 500
 N_max : 60000
 
 # Scheduler parameters
-step_size: 180
+step_size: 230
 step_gamma: 0.2
 
 
@@ -43,6 +43,6 @@ k_down : 16
 blocks: [1,1,1,1,1]
 value_down: [1,0.06,0.15,0.375,0.9375]
 channels: [32, 64, 128, 256, 512]
-strides: [1,1,2,2,4]
+strides: [1,1,1,1,1]
 in_channels: 6
 subsampling: 'grid' # fps or grid
