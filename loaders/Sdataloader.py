@@ -120,12 +120,15 @@ class Stanford_Dataset(Dataset):
                           self.processed_file_names[idx])
         
         if self.N_max is not None:
+            # do not crop while testing
             data = crop_data(data, self.N_max)
 
-        data = self.transform_1(data)
-        data = self.transform_2(data)
-        data = self.transform_3(data)
-        data = self.transform_4(data)
+        # only do data transform if training 
+        if self.split == 'train':
+            data = self.transform_1(data)
+            data = self.transform_2(data)
+            data = self.transform_3(data)
+            data = self.transform_4(data)
 
         # add absolute positions to features and turn tensors to float
         data.x = torch.cat([data.x, data.pos], dim=1).float()

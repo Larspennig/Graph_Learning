@@ -59,6 +59,9 @@ def main():
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Model has {count_parameters(GNN_model)} parameters.')
 
+    GNN_model = Lightning_GNN(config=config).cuda()
+    GNN_model.load_state_dict(torch.load('model_checkpoints/2024-08-30_11.48.52s3dis_base/epoch=199-train_loss=0.15.ckpt')['state_dict'])
+
     # Setup output dir
     run_time = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
     output_dir = os.path.join(
@@ -90,7 +93,9 @@ def main():
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,)
+                         log_every_n_steps=1,
+                         limit_train_batches=1,
+                         limit_val_batches=1)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
