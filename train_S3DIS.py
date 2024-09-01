@@ -60,7 +60,7 @@ def main():
     print(f'Model has {count_parameters(GNN_model)} parameters.')
 
     GNN_model = Lightning_GNN(config=config).cuda()
-    GNN_model.load_state_dict(torch.load('model_checkpoints/2024-08-30_11.48.52s3dis_base/epoch=199-train_loss=0.15.ckpt')['state_dict'])
+    GNN_model.load_state_dict(torch.load('model_checkpoints/2024-08-30_11.48.52s3dis_base/epoch=489-train_loss=0.09.ckpt')['state_dict'])
 
     # Setup output dir
     run_time = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
