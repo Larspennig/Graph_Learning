@@ -109,15 +109,15 @@ def main():
                                            batch_size=config['batch_size'],
                                            num_workers=2,
                                            shuffle=False)
-
+        '''
         # retrieve the path to the best model checkpoint
         best_model_path = checkpoint_callback.best_model_path
         if not best_model_path:
             raise ValueError("No best model found")
-
+        
         # load the best model checkpoint
         GNN_model.load_state_dict(torch.load(best_model_path)['state_dict'])
-
+        '''
         # initialize a new Trainer for testing
         trainer = pl.Trainer(
             accelerator=config['device'],
