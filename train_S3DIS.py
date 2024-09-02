@@ -59,9 +59,6 @@ def main():
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Model has {count_parameters(GNN_model)} parameters.')
 
-    GNN_model = Lightning_GNN(config=config).cuda()
-    GNN_model.load_state_dict(torch.load('model_checkpoints/2024-08-30_11.48.52s3dis_base/epoch=489-train_loss=0.09.ckpt')['state_dict'])
-
     # Setup output dir
     run_time = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
     output_dir = os.path.join(
@@ -88,14 +85,12 @@ def main():
 
    # Train
     trainer = pl.Trainer(max_epochs=config['max_epochs'],
-                         check_val_every_n_epoch=5,
+                         check_val_every_n_epoch=10,
                          callbacks=[checkpoint_callback],
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,
-                         limit_train_batches=1,
-                         limit_val_batches=1)
+                         log_every_n_steps=1,)
 
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
@@ -109,7 +104,7 @@ def main():
                                            batch_size=config['batch_size'],
                                            num_workers=2,
                                            shuffle=False)
-        '''
+        
         # retrieve the path to the best model checkpoint
         best_model_path = checkpoint_callback.best_model_path
         if not best_model_path:
@@ -117,7 +112,7 @@ def main():
         
         # load the best model checkpoint
         GNN_model.load_state_dict(torch.load(best_model_path)['state_dict'])
-        '''
+        
         # initialize a new Trainer for testing
         trainer = pl.Trainer(
             accelerator=config['device'],
