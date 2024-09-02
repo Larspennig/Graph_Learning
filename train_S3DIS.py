@@ -117,7 +117,8 @@ def main():
         # initialize a new Trainer for testing
         trainer = pl.Trainer(
             accelerator=config['device'],
-            logger=wandb_logger)
+            logger=wandb_logger,
+            strategy=strategy)
 
         # test the model
         test_results = trainer.test(GNN_model, dataloaders=test_loader)
