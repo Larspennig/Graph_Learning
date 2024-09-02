@@ -28,7 +28,7 @@ class Stanford_Dataset(Dataset):
         self.N_max = N_max
         with open('classes_seg.yml', 'r') as f:
             self.classes = yaml.safe_load(f)
-        self.transform_1 = tg.transforms.RandomJitter(translate=0.015)
+        self.transform_1 = tg.transforms.RandomJitter(translate=0.01)
         self.transform_2 = tg.transforms.RandomRotate(180, axis=2)
         self.transform_3 = RandomScale(scale_low=0.8, scale_high=1.2)
         self.transform_4 = RandomDropColor(p=0.8, color_augment=0.0)
