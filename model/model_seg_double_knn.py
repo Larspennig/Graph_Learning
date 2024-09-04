@@ -18,12 +18,11 @@ from torch_geometric.typing import (
 )
 
 
-def generate_double_graph(data, device='cpu', k=16):
+def generate_double_graph(data, k=16):
     # initalize graph
-    data.to('cpu')
     data = tg.transforms.KNNGraph(k=k)(data)
     data.edge_index = torch.cat([data.edge_index,tg.nn.knn_graph(data.x, k=k, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)], dim=1)
-    return data.to(device)
+    return data
 
 def generate_graph(data, k=16):
     # initalize graph
