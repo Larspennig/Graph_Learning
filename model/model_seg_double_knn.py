@@ -21,16 +21,19 @@ from torch_geometric.typing import (
 def generate_double_graph(data, k=16):
     # initalize graph
     data = tg.transforms.KNNGraph(k=k)(data)
-    '''
-    # adding random connections
-    num_points = data.batch.unique(return_counts=True)[1].min()
-    nodes = data.edge_index[1]
-    random_nodes = torch.randint(0, num_points, nodes.shape, dtype=torch.long)#.cuda()
-    random_edges = torch.cat([torch.stack([random_nodes, nodes]), data.edge_index], dim=1)
-    data.edge_index = random_edges
+    
+    for idx, sample in enumerate(data.batch.unique()):
+        # find minimum idx with batch == sample
+        min_idx = torch.where(data.batch == sample)[0].min()
+        max_idx = torch.where(data.batch == sample)[0].max()
+        target = torch.arange(min_idx, max_idx+1).repeat(k)
+        source = torch.randint(min_idx, max_idx+1, target.shape).to(data.x.device)
+        
+        edge_index = torch.stack([source, target], dim=0)
+        data.edge_index = torch.cat([data.edge_index, edge_index], dim=1)
 
-    data.edge_index = torch.cat([data.edge_index,tg.nn.knn_graph(data.x, k=k, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)], dim=1)
-    '''
+    # data.edge_index = torch.cat([data.edge_index,tg.nn.knn_graph(data.x, k=k, batch=data.batch, loop = False, flow = 'source_to_target', cosine=False)], dim=1)
+    
     return data
 
 def generate_graph(data, k=16):
