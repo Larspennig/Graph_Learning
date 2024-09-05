@@ -26,7 +26,7 @@ def generate_double_graph(data, k=16):
         # find minimum idx with batch == sample
         min_idx = torch.where(data.batch == sample)[0].min()
         max_idx = torch.where(data.batch == sample)[0].max()
-        target = torch.arange(min_idx, max_idx+1).repeat(k)
+        target = torch.arange(min_idx, max_idx+1).repeat(k).to(data.x.device)
         source = torch.randint(min_idx, max_idx+1, target.shape).to(data.x.device)
         
         edge_index = torch.stack([source, target], dim=0)
