@@ -2,7 +2,7 @@
 
 project_name: 'PointTransformer_Segmentation_nd'
 run_name: 'SN_part_random_long_range'
-debug: True
+debug: False
 data: 'ShapeNetPart'
 
 # Device
