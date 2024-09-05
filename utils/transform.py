@@ -3,6 +3,10 @@ import os
 import numpy as np
 import torch_geometric as tg
 
+'''
+adapted from stratified transformer __LINK__
+
+'''
 
 class RandomScale():
     def __init__(self, scale_low=0.8, scale_high=1.2):
