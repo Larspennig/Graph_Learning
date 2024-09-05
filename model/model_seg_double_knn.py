@@ -25,7 +25,7 @@ def generate_double_graph(data, k=16):
     # adding random connections
     num_points = data.batch.unique(return_counts=True)[1].min()
     nodes = data.edge_index[1]
-    random_nodes = torch.randint(0, num_points, nodes.shape, dtype=torch.long)
+    random_nodes = torch.randint(0, num_points, nodes.shape, dtype=torch.long).cuda()
     random_edges = torch.cat([torch.stack([random_nodes, nodes]), data.edge_index], dim=1)
     data.edge_index = random_edges
     '''
