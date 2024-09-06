@@ -19,7 +19,6 @@ from torch_geometric.typing import (
     torch_sparse,
 )
 
-DEVICE = 'cpu'
 
 def create_graph(data, k=16):
     # initalize graph
@@ -33,7 +32,7 @@ class StraightThrough(torch.autograd.Function):
     @staticmethod
     def forward(ctx, alpha, factor):
         ctx.save_for_backward(alpha, factor) 
-        return alpha*factor[:,None]
+        return alpha #*factor[:,None]
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -73,13 +72,6 @@ class generate_graph(nn.Module):
             if i > 10:
                 raise ValueError('kNN feature graph clould not be constructed')
                 break
-
-        # add edge_index with kNN in feature space
-        edges_large = edges_large
-
-        # better solution? to make neighbors deterministic?
-        rand_scores = torch.rand_like(emb_g) * 0.0001
-        emb_g = emb_g + rand_scores.to(DEVICE)
 
         dist = torch.norm(emb_g[edges_large[0]] - emb_g[edges_large[1]], dim=1)
 
@@ -165,7 +157,7 @@ class Custom_Transformer(PointTransformerConv):
             alpha = self.attn_nn(alpha)
 
         factor = torch.cat([edge_index_soft_v[0, :], torch.ones(
-            edge_index.shape[1]-edge_index_soft_v.shape[1]).to(DEVICE)], dim=0)
+            edge_index.shape[1]-edge_index_soft_v.shape[1]).to(x_j.device)], dim=0)
         alpha = StraightThrough.apply(alpha, factor)
         #alpha = factor[:, None]*alpha
         alpha = softmax(alpha, index, ptr, size_i)

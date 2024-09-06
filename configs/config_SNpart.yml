@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_random_long_range'
+run_name: 'SN_part_super_simple'
 debug: False
 data: 'ShapeNetPart'
 
@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'double'
+model: 'super_simple'
 
 # Training parameters
 batch_size: 30
