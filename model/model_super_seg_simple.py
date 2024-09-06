@@ -54,7 +54,8 @@ class generate_graph(nn.Module):
 
     def forward(self, data):
         # initalize graph
-        emb_g = self.MLP(data.x)
+        x_detached = data.x.detach()
+        emb_g = self.MLP(x_detached)
 
         num_edges = min(data.x[data.batch == 0].shape[0],16)
         data = tg.transforms.KNNGraph(k=16)(data)
