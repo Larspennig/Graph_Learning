@@ -16,7 +16,7 @@ random_connections: True # so far only implemented for global
 # Training parameters
 batch_size: 30
 learning_rate: 0.05
-max_epochs: 1
+max_epochs: 200
 momentum: 0.9
 weight_decay: 0.0001
 
