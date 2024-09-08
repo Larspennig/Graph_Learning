@@ -68,8 +68,8 @@ def main():
 
 
     checkpoint_callback = ModelCheckpoint(save_top_k=3,
-                                        monitor='val_acc',
-                                        mode='max',
+                                        monitor='val_loss',
+                                        mode='min',
                                         dirpath=output_dir,
                                         filename=checkpoint_filename)
     
