@@ -85,8 +85,7 @@ def main():
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1)
-
+                         log_every_n_steps=1,)
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
                 val_dataloaders=val_loader)
@@ -111,7 +110,7 @@ def main():
         # initialize a new Trainer for testing
         trainer = pl.Trainer(
             accelerator=config['device'],
-            logger=wandb_logger)
+            logger=wandb_logger,)
 
         # test the model
         test_results = trainer.test(GNN_model, dataloaders=test_loader)
@@ -133,6 +132,7 @@ def main():
             cat_mious[key]['miou'] = torch.mean(torch.stack(cat_mious[key]['ious']))
             all_ious.append(cat_mious[key]['miou'])
             category = dataset_test.number2name[key]
+            print(f'{category} miou: ', cat_mious[key]['miou'].item())
         cat_miou = torch.mean(torch.stack(all_ious))
         print('cat_miou: ', cat_miou.item())
 
@@ -142,6 +142,8 @@ def main():
         print('miou: ', miou)
         print('macc: ', macc)
         print('oa: ', oa)
+        print('ious: ', ious)
+        print('accs: ', accs)
 
 
 if __name__ == '__main__':

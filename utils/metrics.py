@@ -1,6 +1,6 @@
 '''
-Script taken from OpenPoints Self-positioning point transformer. 
-https://github.com/mlvlab/SPoTr/blob/main/utils/metrics.py
+Script copied from OpenPoints. 
+https://github.com/guochengqian/openpoints
 
 '''
 

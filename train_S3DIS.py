@@ -139,6 +139,8 @@ def main():
         print('miou: ', miou)
         print('macc: ', macc)
         print('oa: ', oa)
+        print('ious: ', ious)
+        print('accs: ', accs)
     
 if __name__ == '__main__':
     main()

@@ -10,12 +10,16 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'super_simple'
+model: 'global'
+random_connections: True # so far only implemented for global
 
 # Training parameters
 batch_size: 30
 learning_rate: 0.05
-max_epochs: 200
+max_epochs: 1
+momentum: 0.9
+weight_decay: 0.0001
+
 # Scheduler parameters
 step_size: 80
 step_gamma: 0.2
