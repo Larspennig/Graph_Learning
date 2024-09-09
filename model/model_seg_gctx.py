@@ -106,14 +106,26 @@ class glob2loc(nn.Module):
                                   nn.BatchNorm1d(channels_out),
                                   nn.ReLU())
         
+        self.linear_q = nn.Linear(channels_in, channels_out)
+        self.linear_k = nn.Linear(channels_in, channels_out)
+        self.linear_v = nn.Linear(channels_in, channels_out)
+        
     def forward(self, data, edge_index, fps_pos):
+        delta_feat = self.linear_k(data.x)[edge_index[0]] - scatter(self.linear_q(data.x)[edge_index[0]], edge_index[1], dim=0, reduce='mean')[edge_index[1]]
+
+        pos_enc = self.pos_d_l(fps_pos[edge_index[1]]-data.pos[edge_index[0]])
+        attn_loc = softmax(self.feat_mlp_loc(delta_feat+pos_enc), edge_index[1])
+
+        fps_n_x = scatter(attn_loc*self.linear_v(data.x)[edge_index[0]], edge_index[1], dim=0, reduce='mean')
+        
+        '''
         delta_feat = data.x[edge_index[0]] - scatter(data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')[edge_index[1]]
 
         pos_enc = self.pos_d_l(fps_pos[edge_index[1]]-data.pos[edge_index[0]])
         attn_loc = softmax(self.feat_mlp_loc(delta_feat+pos_enc), edge_index[1])
 
         fps_n_x = scatter(attn_loc*data.x[edge_index[0]]*pos_enc, edge_index[1], dim=0, reduce='mean')
-        
+        '''
         return fps_n_x
 
 
