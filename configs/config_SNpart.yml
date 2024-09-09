@@ -1,8 +1,8 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_all_connections'
-debug: False
+run_name: 'SN_part_real_global_attention'
+debug: True
 data: 'ShapeNetPart'
 
 # Device
