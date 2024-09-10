@@ -122,7 +122,6 @@ def main():
         trainer = pl.Trainer(
             accelerator=config['device'],
             logger=wandb_logger,
-            limit_test_batches=1
             )
 
         # test the model
