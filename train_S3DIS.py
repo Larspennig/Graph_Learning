@@ -108,7 +108,7 @@ def main():
         test_loader = tg.loader.DataLoader(dataset_test,
                                            batch_size=config['batch_size'],
                                            num_workers=2,
-                                           shuffle=False)
+                                           shuffle=False,)
         '''
         # retrieve the path to the best model checkpoint
         best_model_path = checkpoint_callback.best_model_path
@@ -122,6 +122,7 @@ def main():
         trainer = pl.Trainer(
             accelerator=config['device'],
             logger=wandb_logger,
+            limit_test_batches=1
             )
 
         # test the model
@@ -146,7 +147,7 @@ def main():
         print('ious: ', ious)
         print('accs: ', accs)
 
-        count = GNN_model.cm.count()
+        count = GNN_model.cm.count
         print('count: ', count)
     
 if __name__ == '__main__':
