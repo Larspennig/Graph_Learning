@@ -159,8 +159,8 @@ class Custom_Transformer(PointTransformerConv):
 
         factor = torch.cat([edge_index_soft_v[0, :], torch.ones(
             edge_index.shape[1]-edge_index_soft_v.shape[1]).to(x_j.device)], dim=0)
-        alpha = StraightThrough.apply(alpha, factor)
-        #alpha = factor[:, None]*alpha
+        #alpha = StraightThrough.apply(alpha, factor)
+        alpha = factor[:, None]*alpha
         alpha = softmax(alpha, index, ptr, size_i)
 
         return alpha * (x_j + delta)

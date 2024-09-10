@@ -53,7 +53,11 @@ def main():
     print(len(train_loader))
 
     # Model setup
-    GNN_model = Lightning_GNN(config=config)
+    #GNN_model = Lightning_GNN(config=config)
+
+    GNN_model = Lightning_GNN(config=config).cuda()
+    GNN_model.load_state_dict(torch.load('model_checkpoints/2024-09-09_16.54.28s3dis_base/epoch=259-train_loss=0.20.ckpt')['state_dict'])
+
     GNN_model.to(config['device'])
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -82,7 +86,7 @@ def main():
     )
 
     #strategy = DDPStrategy(find_unused_parameters=True)
-
+    '''
    # Train
     trainer = pl.Trainer(max_epochs=config['max_epochs'],
                          check_val_every_n_epoch=10,
@@ -96,7 +100,7 @@ def main():
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
                 val_dataloaders=val_loader)
-    
+    '''
     if config['test']:
         dataset_test = Stanford_Dataset(root=config['root'],
                                       split='test')
@@ -105,7 +109,7 @@ def main():
                                            batch_size=config['batch_size'],
                                            num_workers=2,
                                            shuffle=False)
-        
+        '''
         # retrieve the path to the best model checkpoint
         best_model_path = checkpoint_callback.best_model_path
         if not best_model_path:
@@ -113,7 +117,7 @@ def main():
         
         # load the best model checkpoint
         GNN_model.load_state_dict(torch.load(best_model_path)['state_dict'])
-        
+        '''
         # initialize a new Trainer for testing
         trainer = pl.Trainer(
             accelerator=config['device'],
@@ -141,6 +145,9 @@ def main():
         print('oa: ', oa)
         print('ious: ', ious)
         print('accs: ', accs)
+
+        count = GNN_model.cm.count()
+        print('count: ', count)
     
 if __name__ == '__main__':
     main()

@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_real_global_attention'
+run_name: 'SN_part_super_simple'
 debug: False
 data: 'ShapeNetPart'
 
@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'global'
+model: 'super_simple'
 random_connections: True # so far only implemented for global
 
 # Training parameters
