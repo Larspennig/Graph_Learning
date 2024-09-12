@@ -4,7 +4,7 @@ from model.model_seg import TransformerGNN
 from model.model_super_seg_simple import TransformerGNN_super_simple
 from model.model_seg_double_knn import TransformerGNN_double
 from model.model_seg_gctx import TransformerGNN_global
-from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, MultiStepLR
 from utils.metrics import ConfusionMatrix
 from torchmetrics import JaccardIndex
 import math
@@ -46,7 +46,15 @@ class Lightning_GNN(LightningModule):
             self.model = TransformerGNN_double(config=config)
         elif config['model'] == 'global':
             self.model = TransformerGNN_global(config=config)
-        self.loss_fn = torch.nn.CrossEntropyLoss()
+
+        if self.dataset == 'ShapeNetPart':
+            self.loss_fn = torch.nn.CrossEntropyLoss()
+        if self.dataset == 'S3DIS':
+            self.loss_fn = torch.nn.CrossEntropyLoss(weight=torch.tensor(config['class_weights']).float())
+        else:
+            raise ValueError('Dataset not supported yet.')
+        
+
         self.config = config
         self.cm = ConfusionMatrix(config['num_classes'])
         if self.dataset == 'ShapeNetPart':
@@ -144,11 +152,14 @@ class Lightning_GNN(LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.model.parameters(
         ), lr=self.config['learning_rate'],momentum=self.config['momentum'], weight_decay=self.config['weight_decay'])
-
-        scheduler = {
-            'scheduler': StepLR(optimizer, gamma=self.config['step_gamma'], step_size=self.config['step_size']),
-            'interval': 'epoch',
-            'frequency': 1
-        }
+        if self.dataset == 'ShapeNetPart':
+            scheduler = {
+                'scheduler': StepLR(optimizer, gamma=self.config['step_gamma'], step_size=self.config['step_size']),
+                'interval': 'epoch',
+                'frequency': 1}
+        elif self.dataset == 'S3DIS':
+            scheduler = {
+                'scheduler': MultiStepLR(optimizer, milestones=self.config['milestones'], gamma=self.config['step_gamma']),
+            } 
         return {'optimizer': optimizer, 'lr_scheduler': scheduler}
 

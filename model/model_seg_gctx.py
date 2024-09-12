@@ -111,6 +111,7 @@ class glob2loc(nn.Module):
         self.linear_v = nn.Linear(channels_in, channels_out)
         
     def forward(self, data, edge_index, fps_pos):
+        '''
         delta_feat = self.linear_k(data.x)[edge_index[0]] - scatter(self.linear_q(data.x)[edge_index[0]], edge_index[1], dim=0, reduce='mean')[edge_index[1]]
 
         pos_enc = self.pos_d_l(fps_pos[edge_index[1]]-data.pos[edge_index[0]])
@@ -125,7 +126,7 @@ class glob2loc(nn.Module):
         attn_loc = softmax(self.feat_mlp_loc(delta_feat+pos_enc), edge_index[1])
 
         fps_n_x = scatter(attn_loc*data.x[edge_index[0]]*pos_enc, edge_index[1], dim=0, reduce='mean')
-        '''
+        
         return fps_n_x
 
 
@@ -157,7 +158,7 @@ class global_attn(nn.Module):
 
     def forward(self, data):
         # Get global points via farthest point sampling
-        perc = 20/data.x[data.batch == 0].shape[0]
+        perc = 10/data.x[data.batch == 0].shape[0]
         indices = tgnn.pool.fps(data.pos, ratio=perc, batch=data.batch)
         indices = indices.sort().values
 
