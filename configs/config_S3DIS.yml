@@ -20,7 +20,7 @@ N_max : 60000
 momentum: 0.9
 weight_decay: 0.0001
 milestones: [450,600]
-class_weights: [1,1,1,1,1,10,1,1,1,1,1,1,1,1]
+class_weights: [1,1,1,1,1,1.5,1,1,1,1,1,1,1,1]
 
 # Scheduler parameters
 step_size: 300
