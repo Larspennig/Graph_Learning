@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_global_n=10'
+run_name: 'SN_part_global_n=15'
 debug: False
 data: 'ShapeNetPart'
 

@@ -158,7 +158,7 @@ class global_attn(nn.Module):
 
     def forward(self, data):
         # Get global points via farthest point sampling
-        perc = 10/data.x[data.batch == 0].shape[0]
+        perc = 15/data.x[data.batch == 0].shape[0]
         indices = tgnn.pool.fps(data.pos, ratio=perc, batch=data.batch)
         indices = indices.sort().values
 
