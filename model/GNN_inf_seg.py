@@ -50,7 +50,7 @@ class Lightning_GNN(LightningModule):
         if self.dataset == 'ShapeNetPart':
             self.loss_fn = torch.nn.CrossEntropyLoss()
         elif self.dataset == 'S3DIS':
-            self.loss_fn = torch.nn.CrossEntropyLoss(weight=torch.tensor(config['class_weights']).float())
+            self.loss_fn = torch.nn.CrossEntropyLoss()
         else:
             raise ValueError('Dataset not supported yet.')
         
