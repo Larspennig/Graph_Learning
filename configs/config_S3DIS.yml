@@ -15,12 +15,12 @@ model: 'standard'
 # Training parameters
 batch_size: 8
 learning_rate: 0.5
-max_epochs: 850
+max_epochs: 1000
 N_max : 60000
 momentum: 0.9
 weight_decay: 0.0001
 milestones: [450,600]
-class_weights: [1,1,1,1,1,1.5,1,1,1,1,1,1,1,1]
+class_weights: [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 
 # Scheduler parameters
 step_size: 300
@@ -43,7 +43,7 @@ num_classes : 14
 num_categories: None #only ShapeNetPart
 k_up : 3
 k_down : 16
-blocks: [1,2,3,3,1]
+blocks: [1,1,1,1,1]
 value_down: [1,0.06,0.15,0.375,0.9375]
 channels: [32, 64, 128, 256, 512]
 strides: [1,2,4,4,4]
