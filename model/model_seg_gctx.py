@@ -17,7 +17,7 @@ from torch_geometric.typing import (
     SparseTensor,
     torch_sparse,
 )
-RANDOM_CONNECTIONS = False
+RANDOM_CONNECTIONS = True
 
 
 def generate_graph(data, k=16):
