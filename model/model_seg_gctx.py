@@ -241,7 +241,7 @@ class Glob_Loc(nn.Module):
 
         self.glob = GlobalAttention(in_channels, out_channels)
         self.loc = PointTrans_Layer(in_channels, out_channels)
-        self.param = nn.Parameter(torch.tensor([0.0]), requires_grad=True)
+        self.param = nn.Parameter(torch.tensor([0.0]), requires_grad=False)
 
     def forward(self, data):
         x_glob = self.glob(data)
