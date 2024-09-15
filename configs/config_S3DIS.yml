@@ -43,7 +43,7 @@ num_classes : 14
 num_categories: None #only ShapeNetPart
 k_up : 3
 k_down : 16
-blocks: [1,2,3,2,2]
+blocks: [1,1,1,1,1]
 value_down: [1,0.06,0.15,0.375,0.9375]
 channels: [32, 64, 128, 256, 512]
 strides: [1,1,1,1,1]
