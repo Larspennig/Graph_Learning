@@ -21,9 +21,11 @@ from torch_geometric.typing import (
 
 def generate_graph(data, k=16):
     # initalize graph
+    '''
     r = 0.05 * 1/(data.x.shape[0]/len(data.batch.unique())/2048)**(1/3)*2
     data = tg.transforms.RadiusGraph(r=0.05,loop=False,max_num_neighbors=32)(data)
-    ###data = tg.transforms.KNNGraph(k=k)(data)
+    '''
+    data = tg.transforms.KNNGraph(k=k)(data)
     return data
 
 class Custom_Transformer(PointTransformerConv):
