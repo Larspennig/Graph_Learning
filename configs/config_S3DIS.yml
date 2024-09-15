@@ -14,17 +14,16 @@ model: 'standard'
 
 # Training parameters
 batch_size: 8
-learning_rate: 0.5
+learning_rate: 0.05
 max_epochs: 1000
 N_max : 60000
 momentum: 0.9
 weight_decay: 0.0001
-milestones: [450,600]
 class_weights: [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 
 # Scheduler parameters
-step_size: 300
 step_gamma: 0.2
+milestones: [450,600]
 
 # Val parameters
 batch_size_val: 2
