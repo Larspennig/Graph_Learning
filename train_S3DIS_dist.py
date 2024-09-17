@@ -92,6 +92,8 @@ def main():
                          logger=wandb_logger,
                          log_every_n_steps=1,
                          strategy=strategy,
+                         accumulate_grad_batches=config['accumulate_grad_batches'],
+                         devices=2
                          )
 
     trainer.fit(GNN_model,
