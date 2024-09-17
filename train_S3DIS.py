@@ -91,6 +91,7 @@ def main():
                          accelerator=config['device'],
                          logger=wandb_logger,
                          log_every_n_steps=1,
+                         devices=2,
                          )
 
     trainer.fit(GNN_model,
