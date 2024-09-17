@@ -13,7 +13,7 @@ checkpoints: 'model_checkpoints/'
 model: 'global'
 
 # Training parameters
-batch_size: 4
+batch_size: 2
 learning_rate: 0.5
 max_epochs: 1000
 N_max : 60000
