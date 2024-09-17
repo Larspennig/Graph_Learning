@@ -69,15 +69,15 @@ class Lightning_GNN(LightningModule):
         output = self(inputs)
         loss = self.loss_fn(output, target.to(self.dev))
         self.log('train_loss', loss.item(), on_epoch=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
         self.log('curr_train_loss', loss.item(), on_step=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
         self.log('batch_size', 2)
         values = output.max(dim=1).indices
         accr = torch.sum(values == target.to(self.dev)) / \
             len(target.to(self.dev))
         self.log('train_acc', accr, on_epoch=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'],sync_dist=self.config['dist'])
         return loss
 
     def validation_step(self, batch):
@@ -86,12 +86,12 @@ class Lightning_GNN(LightningModule):
         output = self(inputs)
         loss = self.loss_fn(output, target.to(self.dev))
         self.log('val_loss', loss.item(), on_epoch=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
         values = output.max(dim=1).indices
         accr = torch.sum(values == target.to(self.dev)) / \
             len(target.to(self.dev))
         self.log('val_acc', accr, on_epoch=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
     
 
         # Compute MIoU
@@ -113,7 +113,7 @@ class Lightning_GNN(LightningModule):
             
             ins_MIoU = torch.mean(torch.stack(batch_ious))
             self.log('val_miou', ins_MIoU, on_epoch=True,
-                    batch_size=self.config['batch_size'])
+                    batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
         return loss
 
     def test_step(self, batch):
@@ -125,7 +125,7 @@ class Lightning_GNN(LightningModule):
 
         accr = torch.sum(values == target)/len(target)
         self.log('test_acc', accr, on_epoch=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
         
         batch_ious = []
     
@@ -144,7 +144,7 @@ class Lightning_GNN(LightningModule):
         
         ins_MIoU = torch.mean(torch.stack(batch_ious))
         self.log('test_miou', ins_MIoU, on_epoch=True,
-                 batch_size=self.config['batch_size'])
+                 batch_size=self.config['batch_size'], sync_dist=self.config['dist'])
     
         self.cm.update(values, target)
         return accr

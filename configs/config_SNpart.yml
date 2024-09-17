@@ -19,6 +19,7 @@ learning_rate: 0.05
 max_epochs: 200
 momentum: 0.9
 weight_decay: 0.0001
+dist : False
 
 # Scheduler parameters
 step_size: 80
