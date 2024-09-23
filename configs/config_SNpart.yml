@@ -1,7 +1,7 @@
 # Configuration for Graph Learning
 
 project_name: 'PointTransformer_Segmentation_nd'
-run_name: 'SN_part_base_radius=0.05'
+run_name: 'SN_part_global_kernel_n16'
 debug: False
 data: 'ShapeNetPart'
 
@@ -10,8 +10,9 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'global'
 random_connections: False # so far only implemented for global
+
 
 # Training parameters
 batch_size: 30

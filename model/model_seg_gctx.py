@@ -18,6 +18,7 @@ from torch_geometric.typing import (
     torch_sparse,
 )
 RANDOM_CONNECTIONS = False
+AGGREGATION = 'kernel'
 
 
 def generate_graph(data, k=16):
@@ -120,12 +121,21 @@ class glob2loc(nn.Module):
         fps_n_x = scatter(attn_loc*self.linear_v(data.x)[edge_index[0]], edge_index[1], dim=0, reduce='mean')
         
         '''
-        delta_feat = data.x[edge_index[0]] - scatter(data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')[edge_index[1]]
+        if AGGREGATION.lower() == 'kernel':
+            delt_pos = fps_pos[edge_index[1]] - data.pos[edge_index[0]]
+            euc_kernel = 1 / (1+5*delt_pos.pow(2).sum(dim=1))
+            weight = softmax(euc_kernel, edge_index[1])
+            fps_n_x = scatter(weight.unsqueeze(1)*data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')
 
-        pos_enc = self.pos_d_l(fps_pos[edge_index[1]]-data.pos[edge_index[0]])
-        attn_loc = softmax(self.feat_mlp_loc(delta_feat+pos_enc), edge_index[1])
+        elif AGGREGATION.lower() == 'attention':
+            delta_feat = data.x[edge_index[0]] - scatter(data.x[edge_index[0]], edge_index[1], dim=0, reduce='mean')[edge_index[1]]
 
-        fps_n_x = scatter(attn_loc*data.x[edge_index[0]]*pos_enc, edge_index[1], dim=0, reduce='mean')
+            pos_enc = self.pos_d_l(fps_pos[edge_index[1]]-data.pos[edge_index[0]])
+            attn_loc = softmax(self.feat_mlp_loc(delta_feat+pos_enc), edge_index[1])
+
+            fps_n_x = scatter(attn_loc*data.x[edge_index[0]]*pos_enc, edge_index[1], dim=0, reduce='mean')
+        else:
+            raise ValueError('Specify valid aggregation method')
         
         return fps_n_x
 
