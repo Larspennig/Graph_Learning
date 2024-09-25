@@ -89,4 +89,4 @@ for i,sample in enumerate(test_loader):
         pos = pos - pos.mean(dim=0)
         preds = torch.argmax(out_pc, dim=1)[pos[:,ax] < 0]
         pos = pos[pos[:,ax] < 0]
-        np.savetxt('S3DIS_out/'+out_name+'/pred_global.txt', np.concatenate((pos.numpy(),preds.unsqueeze(1).numpy()),axis=1))           
+        np.savetxt('S3DIS_out/'+out_name+'/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))           
