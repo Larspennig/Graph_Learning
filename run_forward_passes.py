@@ -50,43 +50,44 @@ for i,sample in enumerate(test_loader):
     lowest_accuracy_indices = [x[1] for x in sorted(accr_list, key=lambda x: x[0])[:3]]
     print(lowest_accuracy_indices)
 
-    for j in range(2):
-        batch_idx = j
-        ax = 0
-        sample.cpu()
-        pos = sample.pos[sample.batch == batch_idx].cpu()
-        pos = pos - pos.mean(dim=0)
-        color = sample.x[sample.batch == batch_idx][:,:3][pos[:,ax] < 0].cpu()
-        label = sample.y[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
-        pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
-        pos = pos[pos[:,ax] < 0]
+    with torch.no_grad():
+        for j in range(2):
+            batch_idx = j
+            ax = 0
+            sample.cpu()
+            pos = sample.pos[sample.batch == batch_idx].cpu()
+            pos = pos - pos.mean(dim=0)
+            color = sample.x[sample.batch == batch_idx][:,:3][pos[:,ax] < 0].cpu()
+            label = sample.y[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
+            pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
+            pos = pos[pos[:,ax] < 0]
 
-        out_name = f'cloud_{j}_batch_{i}'
+            out_name = f'cloud_{j}_batch_{i}'
 
-        # Save all pointclouds
-        os.makedirs('S3DIS_out/' + out_name,exist_ok=True)  
-        np.savetxt('S3DIS_out/'+out_name+'/input.txt', np.concatenate((pos.numpy(),color.numpy()), axis=1))
-        np.savetxt('S3DIS_out/'+out_name+'/label.txt', np.concatenate((pos.numpy(),label.unsqueeze(1).numpy()),axis=1))
-        np.savetxt('S3DIS_out/'+out_name+'/pred.txt', np.concatenate((pos.numpy(),pred.unsqueeze(1).numpy()),axis=1))           
+            # Save all pointclouds
+            os.makedirs('S3DIS_out/' + out_name,exist_ok=True)  
+            np.savetxt('S3DIS_out/'+out_name+'/input.txt', np.concatenate((pos.numpy(),color.numpy()), axis=1))
+            np.savetxt('S3DIS_out/'+out_name+'/label.txt', np.concatenate((pos.numpy(),label.unsqueeze(1).numpy()),axis=1))
+            np.savetxt('S3DIS_out/'+out_name+'/pred.txt', np.concatenate((pos.numpy(),pred.unsqueeze(1).numpy()),axis=1))           
 
-        glob_sampel = tg.data.Data(
-            x=sample.x[sample.batch == batch_idx],
-            pos=sample.pos[sample.batch == batch_idx],
-            batch=torch.zeros(sample.x[sample.batch == batch_idx].shape[0], dtype=torch.long),
-            y=sample.y[sample.batch == batch_idx]
-        )
-        GNN_model_glob.eval()
-        GNN_model_glob.cuda()
-        out_pc = GNN_model_glob(glob_sampel.cuda())
-        out_pc.cpu()
-        glob_sampel.cpu()
-        sample.cpu()
+            glob_sampel = tg.data.Data(
+                x=sample.x[sample.batch == batch_idx],
+                pos=sample.pos[sample.batch == batch_idx],
+                batch=torch.zeros(sample.x[sample.batch == batch_idx].shape[0], dtype=torch.long),
+                y=sample.y[sample.batch == batch_idx]
+            )
+            GNN_model_glob.eval()
+            GNN_model_glob.cuda()
+            out_pc = GNN_model_glob(glob_sampel.cuda())
+            out_pc.cpu()
+            glob_sampel.cpu()
+            sample.cpu()
 
-        accr_global = torch.sum(torch.argmax(out_pc.cpu(), dim=1) == sample.y.cpu()[sample.batch.cpu() == batch_idx]).item() / len(sample.y.cpu()[sample.batch.cpu() == batch_idx])
-        print(accr_global)
+            accr_global = torch.sum(torch.argmax(out_pc.cpu(), dim=1) == sample.y.cpu()[sample.batch.cpu() == batch_idx]).item() / len(sample.y.cpu()[sample.batch.cpu() == batch_idx])
+            print(accr_global)
 
-        pos = glob_sampel.pos
-        pos = pos - pos.mean(dim=0)
-        preds = torch.argmax(out_pc, dim=1)[pos[:,ax] < 0]
-        pos = pos[pos[:,ax] < 0]
-        np.savetxt('S3DIS_out/'+out_name+'/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))           
+            pos = glob_sampel.pos
+            pos = pos - pos.mean(dim=0)
+            preds = torch.argmax(out_pc, dim=1)[pos[:,ax] < 0]
+            pos = pos[pos[:,ax] < 0]
+            np.savetxt('S3DIS_out/'+out_name+'/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))           
