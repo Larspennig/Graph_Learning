@@ -65,6 +65,7 @@ for i,sample in enumerate(test_loader):
             out_name = f'cloud_{j}_batch_{i}_test'
             print(out_name)
 
+
             # Save all pointclouds
             os.makedirs(f'S3DIS_out/{out_name}')
             np.savetxt(f'S3DIS_out/{out_name}/input.txt', np.concatenate((pos.numpy(),color.numpy()), axis=1))
