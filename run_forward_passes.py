@@ -38,7 +38,9 @@ for i,sample in enumerate(test_loader):
 
     with torch.no_grad():
         GNN_model.eval()
-        out_pc = GNN_model(sample.cuda()).cpu()
+        GNN_model.cuda()
+        out_pc = GNN_model(sample.cuda())
+        out_pc.cpu()
 
     prediction = torch.argmax(out_pc, dim=1)
     accr_list = []
@@ -73,7 +75,10 @@ for i,sample in enumerate(test_loader):
             batch=torch.zeros(sample.x[sample.batch == batch_idx].shape[0], dtype=torch.long),
             y=sample.y[sample.batch == batch_idx]
         )
-        out_pc = GNN_model(glob_sampel.cuda()).cpu()
+        GNN_model_glob.eval()
+        GNN_model_glob.cuda()
+        out_pc = GNN_model_glob(glob_sampel.cuda())
+        out_pc.cpu()
 
         accr_global = torch.sum(torch.argmax(out_pc, dim=1) == sample.y[sample.batch == batch_idx]).item() / len(sample.y[sample.batch == batch_idx])
         print(accr_global)
