@@ -63,12 +63,13 @@ for i,sample in enumerate(test_loader):
             pos = pos[pos[:,ax] < 0]
 
             out_name = f'cloud_{j}_batch_{i}_test'
+            print(out_name)
 
             # Save all pointclouds
-            os.makedirs('S3DIS_out/' + out_name,exist_ok=True)  
-            np.savetxt('S3DIS_out/'+out_name+'/input.txt', np.concatenate((pos.numpy(),color.numpy()), axis=1))
-            np.savetxt('S3DIS_out/'+out_name+'/label.txt', np.concatenate((pos.numpy(),label.unsqueeze(1).numpy()),axis=1))
-            np.savetxt('S3DIS_out/'+out_name+'/pred.txt', np.concatenate((pos.numpy(),pred.unsqueeze(1).numpy()),axis=1))           
+            os.makedirs(f'S3DIS_out/{out_name}')
+            np.savetxt(f'S3DIS_out/{out_name}/input.txt', np.concatenate((pos.numpy(),color.numpy()), axis=1))
+            np.savetxt(f'S3DIS_out/{out_name}/label.txt', np.concatenate((pos.numpy(),label.unsqueeze(1).numpy()),axis=1))
+            np.savetxt(f'S3DIS_out/{out_name}/pred.txt', np.concatenate((pos.numpy(),pred.unsqueeze(1).numpy()),axis=1))           
 
             glob_sampel = tg.data.Data(
                 x=sample.x[sample.batch == batch_idx],
@@ -90,4 +91,4 @@ for i,sample in enumerate(test_loader):
             pos = pos - pos.mean(dim=0)
             preds = torch.argmax(out_pc, dim=1)[pos[:,ax] < 0]
             pos = pos[pos[:,ax] < 0]
-            np.savetxt('S3DIS_out/'+out_name+'/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))           
+            np.savetxt(f'S3DIS_out/{out_name}/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))           
