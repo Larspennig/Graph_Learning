@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'global'
+model: 'standard'
 random_connections: False # so far only implemented for global
 
 

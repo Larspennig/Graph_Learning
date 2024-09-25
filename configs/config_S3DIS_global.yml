@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'global'
 
 # Training parameters
 batch_size: 2
