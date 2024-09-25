@@ -32,7 +32,7 @@ GNN_model.load_state_dict(torch.load('model_checkpoints/2024-09-15_18.03.45s3dis
 
 # Load global model
 GNN_model_glob = Lightning_GNN(config=config_glob)
-GNN_model_glob.load_state_dict(torch.load('/home/lars/models/2024-09-17_19.20.45s3dis_global/epoch=609-train_loss=0.08.ckpt')['state_dict'])
+GNN_model_glob.load_state_dict(torch.load('model_checkpoints/2024-09-17_19.20.45s3dis_global/epoch=609-train_loss=0.08.ckpt')['state_dict'])
 
 for i,sample in enumerate(test_loader):
 
