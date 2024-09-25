@@ -53,7 +53,7 @@ for i,sample in enumerate(test_loader):
     for j in range(2):
         batch_idx = j
         ax = 0
-
+        sample.cpu()
         pos = sample.pos[sample.batch == batch_idx]
         pos = pos - pos.mean(dim=0)
         color = sample.x[sample.batch == batch_idx][:,:3][pos[:,ax] < 0]
