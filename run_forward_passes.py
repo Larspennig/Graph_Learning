@@ -54,13 +54,13 @@ for i,sample in enumerate(test_loader):
         batch_idx = j
         ax = 0
         sample.cpu()
-        pos = sample.pos[sample.batch == batch_idx]
+        pos = sample.pos[sample.batch == batch_idx].cpu()
         pos = pos - pos.mean(dim=0)
-        color = sample.x[sample.batch == batch_idx][:,:3][pos[:,ax] < 0]
-        label = sample.y[sample.batch == batch_idx][pos[:,ax] < 0]
-        pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0]
+        color = sample.x[sample.batch == batch_idx][:,:3][pos[:,ax] < 0].cpu()
+        label = sample.y[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
+        pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
         pos = pos[pos[:,ax] < 0]
-
+        
         out_name = f'cloud_{j}_batch_{i}'
 
         # Save all pointclouds
