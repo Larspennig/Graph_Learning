@@ -82,7 +82,7 @@ for i,sample in enumerate(test_loader):
         glob_sampel.cpu()
         sample.cpu()
 
-        accr_global = torch.sum(torch.argmax(out_pc, dim=1) == sample.y[sample.batch == batch_idx]).item() / len(sample.y[sample.batch == batch_idx])
+        accr_global = torch.sum(torch.argmax(out_pc.cpu(), dim=1) == sample.y.cpu()[sample.batch.cpu() == batch_idx]).item() / len(sample.y.cpu()[sample.batch.cpu() == batch_idx])
         print(accr_global)
 
         pos = glob_sampel.pos
