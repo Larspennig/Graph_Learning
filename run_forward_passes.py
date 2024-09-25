@@ -60,7 +60,7 @@ for i,sample in enumerate(test_loader):
         label = sample.y[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
         pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
         pos = pos[pos[:,ax] < 0]
-        
+
         out_name = f'cloud_{j}_batch_{i}'
 
         # Save all pointclouds
@@ -79,6 +79,8 @@ for i,sample in enumerate(test_loader):
         GNN_model_glob.cuda()
         out_pc = GNN_model_glob(glob_sampel.cuda())
         out_pc.cpu()
+        glob_sampel.cpu()
+        sample.cpu()
 
         accr_global = torch.sum(torch.argmax(out_pc, dim=1) == sample.y[sample.batch == batch_idx]).item() / len(sample.y[sample.batch == batch_idx])
         print(accr_global)
