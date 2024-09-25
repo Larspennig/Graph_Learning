@@ -33,6 +33,7 @@ GNN_model.load_state_dict(torch.load('model_checkpoints/2024-09-15_18.03.45s3dis
 # Load global model
 GNN_model_glob = Lightning_GNN(config=config_glob)
 GNN_model_glob.load_state_dict(torch.load('model_checkpoints/2024-09-17_19.20.45s3dis_global/epoch=609-train_loss=0.08.ckpt')['state_dict'])
+idx = 0
 
 for i,sample in enumerate(test_loader):
 
@@ -49,7 +50,7 @@ for i,sample in enumerate(test_loader):
         accr_list.append((accr, i))
     lowest_accuracy_indices = [x[1] for x in sorted(accr_list, key=lambda x: x[0])[:3]]
     print(lowest_accuracy_indices)
-
+    idx_j = 0
     with torch.no_grad():
         for j in range(2):
             batch_idx = j
@@ -62,7 +63,7 @@ for i,sample in enumerate(test_loader):
             pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
             pos = pos[pos[:,ax] < 0]
 
-            out_name = f'cloud_{j}_batch_{i}_test'
+            out_name = f'cloud_{idx_j}_batch_{idx}_test'
             print(out_name)
 
 
@@ -92,4 +93,6 @@ for i,sample in enumerate(test_loader):
             pos = pos - pos.mean(dim=0)
             preds = torch.argmax(out_pc, dim=1)[pos[:,ax] < 0]
             pos = pos[pos[:,ax] < 0]
-            np.savetxt(f'S3DIS_out/{out_name}/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))           
+            np.savetxt(f'S3DIS_out/{out_name}/pred_global.txt', np.concatenate((pos.cpu().numpy(),preds.cpu().unsqueeze(1).numpy()),axis=1))  
+            idx_j += 1
+    idx += 1         
