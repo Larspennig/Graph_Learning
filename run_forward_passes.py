@@ -62,7 +62,7 @@ for i,sample in enumerate(test_loader):
             pred = prediction[sample.batch == batch_idx][pos[:,ax] < 0].cpu()
             pos = pos[pos[:,ax] < 0]
 
-            out_name = f'cloud_{j}_batch_{i}'
+            out_name = f'cloud_{j}_batch_{i}_test'
 
             # Save all pointclouds
             os.makedirs('S3DIS_out/' + out_name,exist_ok=True)  
