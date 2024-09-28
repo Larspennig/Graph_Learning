@@ -1,0 +1,47 @@
+# Configuration for Graph Learning
+
+project_name: 'PointTransformer_Segmentation_nd'
+run_name: 'SN_part_global_kernel_n16'
+debug: False
+data: 'ShapeNetPart'
+
+# Device
+device: 'cuda'
+
+# Model setup
+checkpoints: 'model_checkpoints/'
+model: 'global'
+random_connections: False # so far only implemented for global
+
+
+# Training parameters
+batch_size: 30
+learning_rate: 0.05
+max_epochs: 200
+momentum: 0.9
+weight_decay: 0.0001
+dist : False
+
+# Scheduler parameters
+step_size: 80
+step_gamma: 0.2
+
+# Testing?
+test: True
+
+# Data parameters
+root: 'data/shapenet_core/'
+sample_size : 0.3  # only S3DIS
+
+# Model parameters
+num_classes : 50
+num_categories: 16 #only ShapeNetPart
+grid_size : [0.03,0.03,0.06,0.10,0.20]
+k_up : 3
+k_down : 16
+blocks: [1,1,1,1,1]
+value_down: [1,0.25,0.25,0.25,0.25]
+channels: [32, 64, 128, 256, 512]
+strides: [1,1,1,1,1]
+in_channels: 6
+subsampling: 'fps' # fps or grid 
