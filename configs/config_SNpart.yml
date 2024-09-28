@@ -2,7 +2,7 @@
 
 project_name: 'PointTransformer_Segmentation_nd'
 run_name: 'SN_part_global_kernel_n16'
-debug: True
+debug: False
 data: 'ShapeNetPart'
 
 # Device
