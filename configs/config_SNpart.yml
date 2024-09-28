@@ -2,7 +2,7 @@
 
 project_name: 'PointTransformer_Segmentation_nd'
 run_name: 'SN_part_global_kernel_n16'
-debug: False
+debug: True
 data: 'ShapeNetPart'
 
 # Device
@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'global'
 random_connections: False # so far only implemented for global
 
 

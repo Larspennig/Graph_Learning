@@ -20,6 +20,58 @@ from torch_geometric.typing import (
 RANDOM_CONNECTIONS = False
 AGGREGATION = 'kernel'
 
+class create_global_nodes(nn.Module):
+    def __init__(self,in_channels, out_channels):
+        super().__init__()
+        self.glob2loc = glob2loc(in_channels, out_channels)
+
+    def forward(self,data):
+        perc = 15/data.x[data.batch == 0].shape[0]
+        indices = tgnn.pool.fps(data.pos, ratio=perc, batch=data.batch)
+        indices = indices.sort().values
+        save_index = data.x.shape[0]
+
+        fps_pos = data.pos[indices]
+        fps_x = data.x[indices]  # [m, c]
+        fps_batch = data.batch[indices]
+
+        ### Local 2 Global
+        edge_index = tgnn.pool.knn(
+            fps_pos, data.pos, k=1, batch_x=fps_batch, batch_y=data.batch)
+        
+        fps_n_x = self.glob2loc(data, edge_index, fps_pos)
+
+        # Expand batch indices for broadcasting
+        local_batch_expanded = data.batch.unsqueeze(1)  # Shape: (n, 1)
+        global_batch_expanded = fps_batch.unsqueeze(0)  # Shape: (1, m)
+
+        # Create a mask where local and global tokens have the same batch index
+        mask = (local_batch_expanded == global_batch_expanded)  # Shape: (n, m)
+
+        # Get indices where the mask is True
+        local_indices, global_indices = torch.nonzero(mask, as_tuple=True)
+
+        # Add edges to global tokens to data
+        global_indices = global_indices + data.x.shape[0]
+        global_edges = torch.stack([local_indices, global_indices], dim=0)
+        data.edge_index = torch.cat([data.edge_index, global_edges], dim=1)
+        data.x = torch.cat([data.x, fps_n_x], dim=0)
+        data.y = torch.cat([data.y, torch.zeros(fps_n_x.shape[0], dtype=torch.long)], dim=0)
+        data.batch = torch.cat([data.batch, fps_batch], dim=0)
+        data.pos = torch.cat([data.pos, fps_pos], dim=0)
+
+
+        return data, save_index
+
+def prune_global_nodes(data, index):
+    data.x = data.x[:index]
+    data.batch = data.batch[:index]
+    data.y = data.y[:index]
+    if data.y == None:
+        breakpoint()
+    data.pos = data.pos[:index]
+    return data
+
 
 def generate_graph(data, k=16):
     # initalize graph
@@ -295,18 +347,27 @@ class PointTrans_Layer(nn.Module):
         
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.bn2 = nn.BatchNorm1d(out_channels)
+        self.create_global_nodes = create_global_nodes(in_channels, out_channels)
 
     def forward(self, data):
         # put create graph here
         data.x = self.bn1(self.linear_in(data.x)).relu()
+        if data.y == None:
+            breakpoint()
+        data, index = self.create_global_nodes(data)
+
         out = self.conv(x=data.x,
                         pos=data.pos.float(),
                         edge_index=data.edge_index)
         out = self.bn2(self.linear_up(out)).relu()
 
+        out = out[:index]
+        data = prune_global_nodes(data, index)
+
         # create skip connection
         data.x = out + data.x
-        return data
+        
+        return generate_graph(data)
 
 
 class PointTrans_Layer_down(nn.Module):
@@ -373,7 +434,7 @@ class PointTrans_Layer_up(nn.Module):
                                              batch_y=data_2.batch,
                                              k=self.k_up)
 
-        data = tg.data.Data(x=x_int+data_2.x, pos=data_2.pos, batch=data_2.batch)
+        data = tg.data.Data(x=x_int+data_2.x, pos=data_2.pos, batch=data_2.batch, y=data_2.y)
         return generate_graph(data)
 
 
@@ -409,9 +470,6 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-            if idx == 0:
-                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
-            else:
                 layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
         return nn.Sequential(*layers)
     
@@ -421,9 +479,6 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-            if idx == 0:
-                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
-            else:
                 layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
         return nn.Sequential(*layers)
 
