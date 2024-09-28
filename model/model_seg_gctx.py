@@ -56,7 +56,7 @@ class create_global_nodes(nn.Module):
         global_edges = torch.stack([local_indices, global_indices], dim=0)
         data.edge_index = torch.cat([data.edge_index, global_edges], dim=1)
         data.x = torch.cat([data.x, fps_n_x], dim=0)
-        data.y = torch.cat([data.y, torch.zeros(fps_n_x.shape[0].to(data.x.device), dtype=torch.long)], dim=0)
+        data.y = torch.cat([data.y, torch.zeros(fps_n_x.shape[0], dtype=torch.long).to(data.x.device)], dim=0)
         data.batch = torch.cat([data.batch, fps_batch], dim=0)
         data.pos = torch.cat([data.pos, fps_pos], dim=0)
 
