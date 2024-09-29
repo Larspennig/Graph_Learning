@@ -301,7 +301,7 @@ class Glob_Loc(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
 
-        self.glob = GlobalAttention(in_channels, out_channels)
+        self.glob = PointTrans_Layer(in_channels, out_channels)
         self.loc = PointTrans_Layer(in_channels, out_channels)
         self.param = nn.Parameter(torch.tensor([0.0]), requires_grad=False)
 
@@ -470,7 +470,7 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-                layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
         return nn.Sequential(*layers)
     
     def _make_decoder(self, blocks, channels, special = 'no'):
@@ -479,7 +479,7 @@ class TransformerGNN_global(nn.Module):
         self.in_channels = channels
 
         for idx in range(blocks):
-                layers.append(PointTrans_Layer(in_channels=channels, out_channels=channels))
+                layers.append(Glob_Loc(in_channels=channels, out_channels=channels))
         return nn.Sequential(*layers)
 
     def forward(self, data):
