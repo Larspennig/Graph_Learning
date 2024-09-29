@@ -38,7 +38,7 @@ def main():
                                         shuffle=True)
 
     val_loader = tg.loader.DataLoader(dataset_val,
-                                      batch_size=config['batch_size'],
+                                      batch_size=config['batch_size']/2,
                                       num_workers=2)
 
     # Model setup
@@ -85,7 +85,8 @@ def main():
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,)
+                         log_every_n_steps=1,
+                         accumulate_grad_batches=2)
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
                 val_dataloaders=val_loader)
