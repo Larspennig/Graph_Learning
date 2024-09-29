@@ -38,7 +38,7 @@ def main():
                                         shuffle=True)
 
     val_loader = tg.loader.DataLoader(dataset_val,
-                                      batch_size=config['batch_size']/2,
+                                      batch_size=15,
                                       num_workers=2)
 
     # Model setup
