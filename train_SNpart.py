@@ -85,8 +85,7 @@ def main():
                          default_root_dir=output_dir,
                          accelerator=config['device'],
                          logger=wandb_logger,
-                         log_every_n_steps=1,
-                         accumulate_grad_batches=2)
+                         log_every_n_steps=1,)
     trainer.fit(GNN_model,
                 train_dataloaders=train_loader,
                 val_dataloaders=val_loader)
