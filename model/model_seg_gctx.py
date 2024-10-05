@@ -17,8 +17,8 @@ from torch_geometric.typing import (
     SparseTensor,
     torch_sparse,
 )
-RANDOM_CONNECTIONS = False
-AGGREGATION = 'kernel'
+RANDOM_CONNECTIONS = True
+AGGREGATION = 'attention'
 
 
 def generate_graph(data, k=16):

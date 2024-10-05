@@ -10,7 +10,7 @@ device: 'cuda'
 
 # Model setup
 checkpoints: 'model_checkpoints/'
-model: 'standard'
+model: 'global'
 
 # Training parameters
 batch_size: 2
@@ -20,7 +20,7 @@ N_max : 60000
 momentum: 0.9
 weight_decay: 0.0001
 class_weights: [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-dist : True
+dist : False
 accumulate_grad_batches: 4
 
 # Scheduler parameters
