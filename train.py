@@ -10,8 +10,8 @@ import datetime
 import yaml
 import os
 import wandb
-wandb.login(key='446bb0e42e6ee0d7b7a2224d3b524a036009d8ad')
-# wandb.login()
+# Authenticate via WANDB_API_KEY or credentials configured with `wandb login`.
+wandb.login()
 
 # Load array with params from config.yml
 with open('configs/config.yml', 'r') as f:
